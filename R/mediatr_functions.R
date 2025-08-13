@@ -413,39 +413,34 @@ med_diagram_plotmat <- function(data,
     stop("Package 'diagram' is needed. Please install it.", call. = FALSE)
   }
 
-  # Create matrix for paths - need to fix the structure
-  # The matrix should show connections from nodes (rows) to nodes (columns)
+  # Simple approach: matrix with the coefficient values as edge labels
+  # Matrix shows flow from rows to columns
+  # Order: Row/Col 1 = Mediator, 2 = Treatment, 3 = Outcome
   M <- matrix(
-    0,  # Initialize with zeros
     nrow = 3,
     ncol = 3,
-    byrow = TRUE
+    byrow = TRUE,
+    data = c(
+      0, 0, as.character(data$coef_my),     # Mediator -> Outcome
+      as.character(data$coef_xm), 0, as.character(data$coef_xy),  # Treatment -> Mediator & Outcome
+      0, 0, 0                                # Outcome (no outgoing)
+    )
   )
 
-  # Set labels for edges (non-zero values show connections)
-  # Format: M[from, to] = 1 means there's an edge from 'from' to 'to'
-  # Node order: 1=Mediator, 2=Treatment, 3=Outcome
-  M[2, 1] <- 1  # Treatment -> Mediator
-  M[2, 3] <- 1  # Treatment -> Outcome
-  M[1, 3] <- 1  # Mediator -> Outcome
-
-  # Create edge labels
-  edge_labels <- matrix("", nrow = 3, ncol = 3)
-  edge_labels[2, 1] <- data$coef_xm  # Treatment -> Mediator
-  edge_labels[2, 3] <- data$coef_xy  # Treatment -> Outcome
-  edge_labels[1, 3] <- data$coef_my  # Mediator -> Outcome
-
+  # Create the plot
   diagram::plotmat(
     M,
-    pos = c(1, 2),  # 1 node in first row, 2 in second row
-    name = c(data$lab_m, data$lab_x, data$lab_y),
+    pos = c(1, 2),  # Layout: 1 node top row, 2 nodes bottom row
+    name = c(data$lab_m, data$lab_x, data$lab_y),  # Labels for nodes
     box.type = "rect",
     box.size = box_size,
     box.prop = box_prop,
     curve = 0,
     cex.txt = text_size,
-    txt = edge_labels,
-    arr.width = arrow_size
+    arr.width = arrow_size,
+    arr.length = 0.3,
+    shadow.size = 0,
+    main = ""
   )
 }
 
