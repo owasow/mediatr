@@ -1,0 +1,11 @@
+Personal package for creating publication-ready mediation diagrams.
+
+## Installation
+
+```r
+# Install from local directory
+devtools::install("path/to/mediatr")
+
+# Or install from GitHub (if you put it there)
+devtools::install_github("owasow/mediatr")
+```

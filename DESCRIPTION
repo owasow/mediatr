@@ -1,0 +1,21 @@
+Package: mediatr
+Title: Create Publication-Ready Mediation Diagrams
+Version: 0.1.0
+Authors@R: person("Omar", "Wasow", email = "owasow@berkeley.edu", role = c("aut", "cre"))
+Description: Functions to create mediation analysis diagrams using DiagrammeR, 
+    diagram, and TikZ outputs, with formatted tables and coefficient extraction.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.3
+Imports: 
+    broom,
+    dplyr,
+    glue,
+    scales,
+    stringr
+Suggests: 
+    diagram,
+    DiagrammeR,
+    knitr,
+    mediation
