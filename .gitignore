@@ -6,3 +6,8 @@
 .Renviron
 .Rprofile
 .Ruserdata
+.Rhistory
+.RData
+.Rproj.user/
+.Renviron
+.DS_Store
