@@ -1,4 +1,4 @@
-# Save this as R/mediatr_functions.R in your package directory
+# Save this as R/mediatr_functions.R in package directory
 
 #' @import dplyr
 #' @import glue
