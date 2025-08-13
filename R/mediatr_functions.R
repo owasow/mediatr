@@ -1,4 +1,4 @@
-# Save this as R/mediatr_functions.R in package directory
+# Save this as R/mediatr_functions.R in your package directory
 
 #' @import dplyr
 #' @import glue
@@ -163,45 +163,43 @@ med_table <- function(med_object,
 #' @param ci Include confidence intervals in output?
 #' @param decimals Number of decimal places
 #' @param exp Exponentiate coefficients?
+#' @param format_type Type of formatting: "latex", "html", or "plain"
 #' @return Data frame with formatted coefficient strings
 #' @export
 med_extract_coefs <- function(mediation_out,
                               model_x_on_m,
                               ci = TRUE,
                               decimals = 2,
-                              exp = FALSE) {
+                              exp = FALSE,
+                              format_type = "plain") {
 
   med_df <- med_tidy(mediation_out, exp = exp)
 
-  if (ci) {
-    # Create CI strings
+  if (format_type == "latex" && ci) {
+    # LaTeX formatting with CI (for TikZ only)
     ci_lower_str <- format2(med_df$ci_lower, decimals)
     ci_upper_str <- format2(med_df$ci_upper, decimals)
 
     med_ci <- paste0("(", ci_lower_str, ", ", ci_upper_str, ")")
 
-    # Format ACME with CI - using paste instead of glue to avoid gray() issue
     acme <- paste0(
       format2(med_df$estimate[1], digits = decimals),
       "$^{", starify(med_df$p_value[1]), "}$",
       " \\\\ \\textcolor{gray}{\\small{\\,\\,\\,", med_ci[1], "}}"
     )
 
-    # Format ADE with CI
     ade <- paste0(
       format2(med_df$estimate[2], digits = decimals),
       "$^{", starify(med_df$p_value[2]), "}$",
       " \\\\ \\textcolor{gray}{\\small{", med_ci[2], "}}"
     )
 
-    # Format total effect with CI
     tot <- paste0(
       format2(med_df$estimate[3], digits = decimals),
       "$^{", starify(med_df$p_value[3]), "}$",
       " \\\\ \\textcolor{gray}{\\small{", med_ci[3], "}}"
     )
 
-    # Extract X->M path coefficient
     m1_df <- broom::tidy(model_x_on_m, conf.int = TRUE, conf.level = .95)
     m1_ci <- paste0(
       "(",
@@ -221,8 +219,80 @@ med_extract_coefs <- function(mediation_out,
       " \\\\ \\textcolor{gray}{\\small{", m1_ci, "\\,\\,\\,}}"
     )
 
+  } else if (format_type == "html" && ci) {
+    # HTML-like formatting for GraphViz (uses newlines but no special chars)
+    ci_lower_str <- format2(med_df$ci_lower, decimals)
+    ci_upper_str <- format2(med_df$ci_upper, decimals)
+
+    acme <- paste0(
+      format2(med_df$estimate[1], digits = decimals),
+      starify(med_df$p_value[1]),
+      "\\n(", ci_lower_str[1], ", ", ci_upper_str[1], ")"
+    )
+
+    ade <- paste0(
+      format2(med_df$estimate[2], digits = decimals),
+      starify(med_df$p_value[2]),
+      "\\n(", ci_lower_str[2], ", ", ci_upper_str[2], ")"
+    )
+
+    tot <- paste0(
+      format2(med_df$estimate[3], digits = decimals),
+      starify(med_df$p_value[3]),
+      "\\n(", ci_lower_str[3], ", ", ci_upper_str[3], ")"
+    )
+
+    m1_df <- broom::tidy(model_x_on_m, conf.int = TRUE, conf.level = .95)
+
+    if (exp) {
+      m1_df$estimate[2] <- exp(m1_df$estimate[2])
+    }
+
+    x_on_m <- paste0(
+      format2(m1_df$estimate[2], digits = decimals),
+      starify(m1_df$p.value[2]),
+      "\\n(", format2(m1_df$conf.low[2], decimals), ", ",
+      format2(m1_df$conf.high[2], decimals), ")"
+    )
+
+  } else if (format_type == "plain" && ci) {
+    # Plain text formatting with CI (for plotmat)
+    ci_lower_str <- format2(med_df$ci_lower, decimals)
+    ci_upper_str <- format2(med_df$ci_upper, decimals)
+
+    acme <- paste0(
+      format2(med_df$estimate[1], digits = decimals),
+      starify(med_df$p_value[1]),
+      "\n(", ci_lower_str[1], ", ", ci_upper_str[1], ")"
+    )
+
+    ade <- paste0(
+      format2(med_df$estimate[2], digits = decimals),
+      starify(med_df$p_value[2]),
+      "\n(", ci_lower_str[2], ", ", ci_upper_str[2], ")"
+    )
+
+    tot <- paste0(
+      format2(med_df$estimate[3], digits = decimals),
+      starify(med_df$p_value[3]),
+      "\n(", ci_lower_str[3], ", ", ci_upper_str[3], ")"
+    )
+
+    m1_df <- broom::tidy(model_x_on_m, conf.int = TRUE, conf.level = .95)
+
+    if (exp) {
+      m1_df$estimate[2] <- exp(m1_df$estimate[2])
+    }
+
+    x_on_m <- paste0(
+      format2(m1_df$estimate[2], digits = decimals),
+      starify(m1_df$p.value[2]),
+      "\n(", format2(m1_df$conf.low[2], decimals), ", ",
+      format2(m1_df$conf.high[2], decimals), ")"
+    )
+
   } else {
-    # Simple format without CI
+    # Simple format without CI (works for all)
     acme <- paste0(
       format2(med_df$estimate[1], digits = decimals),
       starify(med_df$p_value[1])
@@ -273,6 +343,7 @@ med_extract_coefs <- function(mediation_out,
 #' @param total Include total effect label?
 #' @param decimals Number of decimal places
 #' @param exp Exponentiate coefficients?
+#' @param format_type Type of formatting: "latex", "html", or "plain"
 #' @return Data frame ready for diagram functions
 #' @export
 med_prepare_diagram_data <- function(med_out,
@@ -283,14 +354,16 @@ med_prepare_diagram_data <- function(med_out,
                                      ci = TRUE,
                                      total = TRUE,
                                      decimals = 2,
-                                     exp = FALSE) {
+                                     exp = FALSE,
+                                     format_type = "plain") {
 
   coefs_text <- med_extract_coefs(
     mediation_out = med_out,
     model_x_on_m = mod_x_on_m,
     ci = ci,
     decimals = decimals,
-    exp = exp
+    exp = exp,
+    format_type = format_type
   )
 
   med_df <- data.frame(
@@ -552,17 +625,12 @@ create_mediation_diagram <- function(med_model,
                                      exp = FALSE,
                                      ...) {
 
-  # Prepare data for all diagram types
-  diagram_data <- med_prepare_diagram_data(
-    med_out = med_model,
-    mod_x_on_m = x_on_m_model,
-    lab_x = x_label,
-    lab_m = m_label,
-    lab_y = y_label,
-    ci = ci,
-    total = total,
-    decimals = decimals,
-    exp = exp
+  # Determine format type based on output
+  format_type <- switch(output_type,
+                        "plotmat" = "plain",
+                        "graphviz" = "html",
+                        "tikz" = "latex",
+                        "all" = "mixed"  # We'll handle this specially
   )
 
   # Get additional arguments for specific functions
@@ -572,11 +640,24 @@ create_mediation_diagram <- function(med_model,
   output <- list()
 
   if (output_type %in% c("graphviz", "all")) {
-    # Extract graphviz-specific arguments
+    # For graphviz, use html formatting (GraphViz understands \\n for newlines)
+    gv_data <- med_prepare_diagram_data(
+      med_out = med_model,
+      mod_x_on_m = x_on_m_model,
+      lab_x = x_label,
+      lab_m = m_label,
+      lab_y = y_label,
+      ci = ci,
+      total = total,
+      decimals = decimals,
+      exp = exp,
+      format_type = "html"
+    )
+
     gv_args <- dots[names(dots) %in% c("height", "width", "graph_label",
                                        "node_text_size", "edge_text_size",
                                        "color", "ranksep", "minlen")]
-    gv_spec <- do.call(med_diagram_graphviz, c(list(data = diagram_data), gv_args))
+    gv_spec <- do.call(med_diagram_graphviz, c(list(data = gv_data), gv_args))
 
     if (requireNamespace("DiagrammeR", quietly = TRUE)) {
       output$graphviz <- DiagrammeR::grViz(gv_spec)
@@ -587,16 +668,42 @@ create_mediation_diagram <- function(med_model,
   }
 
   if (output_type %in% c("plotmat", "all")) {
-    # Extract plotmat-specific arguments
+    # For plotmat, use plain formatting
+    pm_data <- med_prepare_diagram_data(
+      med_out = med_model,
+      mod_x_on_m = x_on_m_model,
+      lab_x = x_label,
+      lab_m = m_label,
+      lab_y = y_label,
+      ci = ci,
+      total = total,
+      decimals = decimals,
+      exp = exp,
+      format_type = "plain"
+    )
+
     pm_args <- dots[names(dots) %in% c("box_size", "box_prop", "arrow_size", "text_size")]
-    output$plotmat <- do.call(med_diagram_plotmat, c(list(data = diagram_data), pm_args))
+    output$plotmat <- do.call(med_diagram_plotmat, c(list(data = pm_data), pm_args))
   }
 
   if (output_type %in% c("tikz", "all")) {
-    # Extract tikz-specific arguments
+    # For tikz, use latex formatting
+    tikz_data <- med_prepare_diagram_data(
+      med_out = med_model,
+      mod_x_on_m = x_on_m_model,
+      lab_x = x_label,
+      lab_m = m_label,
+      lab_y = y_label,
+      ci = ci,
+      total = total,
+      decimals = decimals,
+      exp = exp,
+      format_type = "latex"
+    )
+
     tikz_args <- dots[names(dots) %in% c("scale", "box_width", "box_height",
                                          "caption", "label", "include_figure")]
-    output$tikz <- do.call(med_diagram_tikz, c(list(data = diagram_data), tikz_args))
+    output$tikz <- do.call(med_diagram_tikz, c(list(data = tikz_data), tikz_args))
   }
 
   # Return single output or list
