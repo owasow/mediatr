@@ -2,6 +2,7 @@
 # DIAGRAM PREPARATION FUNCTION
 # ============================================================================
 
+
 #' Prepare data frame for diagram creation
 #' @param med_out Mediation analysis output
 #' @param mod_x_on_m Model for X->M path

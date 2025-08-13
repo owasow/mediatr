@@ -1,21 +1,23 @@
 Package: mediatr
-Title: Create Publication-Ready Mediation Diagrams
+Type: Package
+Title: Mediation Analysis Visualization Toolkit
 Version: 0.1.0
-Authors@R: person("Omar", "Wasow", email = "owasow@berkeley.edu", role = c("aut", "cre"))
-Description: Functions to create mediation analysis diagrams using DiagrammeR, 
-    diagram, and TikZ outputs, with formatted tables and coefficient extraction.
+Author: Your Name
+Maintainer: Your Name <your.email@example.com>
+Description: Create publication-ready mediation analysis diagrams and tables.
+    Supports multiple output formats including GraphViz, plotmat, and TikZ.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.2.3
-Imports: 
-    broom,
+RoxygenNote: 7.3.2
+Imports:
     dplyr,
     glue,
+    stringr,
     scales,
-    stringr
-Suggests: 
-    diagram,
+    broom,
+    knitr
+Suggests:
     DiagrammeR,
-    knitr,
+    diagram,
     mediation

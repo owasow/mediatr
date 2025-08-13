@@ -14,11 +14,11 @@
 create_mediation_diagram <- function(med_model,
                                      x_on_m_model,
                                      x_label = "Treatment",
-                                     m_label = "Mediator", 
+                                     m_label = "Mediator",
                                      y_label = "Outcome",
-                                     output_type = "graphviz",
+                                     output_type = "plotmat",
                                      ...) {
-    
+
     # Prepare data for all diagram types
     diagram_data <- med_prepare_diagram_data(
         med_out = med_model,
@@ -28,23 +28,23 @@ create_mediation_diagram <- function(med_model,
         lab_y = y_label,
         ...
     )
-    
+
     # Generate requested output type(s)
     output <- list()
-    
+
     if (output_type %in% c("graphviz", "all")) {
         gv_spec <- med_diagram_graphviz(diagram_data, ...)
         output$graphviz <- DiagrammeR::grViz(gv_spec)
     }
-    
+
     if (output_type %in% c("plotmat", "all")) {
         output$plotmat <- med_diagram_plotmat(diagram_data, ...)
     }
-    
+
     if (output_type %in% c("tikz", "all")) {
         output$tikz <- med_diagram_tikz(diagram_data, ...)
     }
-    
+
     # Return single output or list
     if (length(output) == 1) {
         return(output[[1]])
