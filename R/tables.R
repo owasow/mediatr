@@ -10,29 +10,29 @@
 #' @param label LaTeX label for cross-referencing
 #' @param exp Logical: exponentiate coefficients?
 #' @return Kable-formatted table
-med_table <- function(med_object, 
-                      decimals = 3, 
-                      p_accuracy = 0.001, 
-                      caption = "", 
-                      label = "", 
+med_table <- function(med_object,
+                      decimals = 3,
+                      p_accuracy = 0.001,
+                      caption = "",
+                      label = "",
                       exp = FALSE) {
-    
+
     # Helper function for padding strings
     pad <- function(s, w) {
         stringr::str_pad(string = s, width = w, side = "left", pad = " ")
     }
-    
+
     # Extract sample size and tidy results
     nobs <- summary(med_object)$nobs
     mediate_tidy_object <- med_tidy(med_object, exp = exp)
-    
+
     # Set label if using knitr
     if (exists("opts_current")) {
         opts_current$set(label = label)
     }
-    
+
     # Format and create table
-    mediate_tidy_object %>% 
+    mediate_tidy_object %>%
         mutate(
             term = c("ACME", "ADE", "Total Effect", "Prop. Mediated"),
             estimate = round(estimate, decimals),
@@ -43,20 +43,20 @@ med_table <- function(med_object,
             ci_upper = paste0(pad(ci_upper, w), ")"),
             p_value = scales::pvalue(p_value, accuracy = p_accuracy) %>%
                 str_replace("<", "$<$")
-        ) %>% 
-        select(term, estimate, ci_lower, ci_upper, p_value) %>% 
+        ) %>%
+        dplyr::select(term, estimate, ci_lower, ci_upper, p_value) %>%
         rename(
             ` ` = term,
             `Estimate` = estimate,
             `CI Lower` = ci_lower,
             `Upper` = ci_upper,
             `p-value` = p_value
-        ) %>% 
+        ) %>%
         kable(
             align = c('l', rep('r', 4)),
             escape = FALSE,
             caption = paste0(
-                caption, 
+                caption,
                 " Causal mediation analysis with quasi-Bayesian confidence intervals. ",
                 "Sample size: ", nobs, "."
             )
