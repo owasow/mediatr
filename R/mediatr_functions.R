@@ -29,15 +29,27 @@ format2 <- function(x, digits = 2) {
 #'
 #' @param x Numeric p-value
 #' @param cutpoint Significance threshold (default: 0.05)
+#' @param format_type Output format ("plain", "html", or "latex")
 #' @return Character string with significance stars
 #' @export
-starify <- function(x, cutpoint = 0.05) {
-  dplyr::case_when(
-    x < 0.001  ~ "***",
-    x < 0.01   ~ "**",
-    x < 0.05   ~ "*",
-    TRUE       ~ ""
-  )
+starify <- function(x, cutpoint = 0.05, format_type = "plain") {
+  # For plotmat, we need to avoid asterisks entirely
+  if (format_type == "plotmat") {
+    return(dplyr::case_when(
+      x < 0.001  ~ " (p<.001)",
+      x < 0.01   ~ " (p<.01)",
+      x < 0.05   ~ " (p<.05)",
+      TRUE       ~ ""
+    ))
+  } else {
+    # For other formats, use standard stars
+    return(dplyr::case_when(
+      x < 0.001  ~ "***",
+      x < 0.01   ~ "**",
+      x < 0.05   ~ "*",
+      TRUE       ~ ""
+    ))
+  }
 }
 
 # ============================================================================
@@ -175,6 +187,27 @@ med_extract_coefs <- function(mediation_out,
 
   med_df <- med_tidy(mediation_out, exp = exp)
 
+  # Helper function for significance indicators
+  get_sig_indicator <- function(p_val, format) {
+    if (format == "plain") {
+      # For plotmat - no asterisks, use text instead
+      dplyr::case_when(
+        p_val < 0.001 ~ " (p<.001)",
+        p_val < 0.01  ~ " (p<.01)",
+        p_val < 0.05  ~ " (p<.05)",
+        TRUE          ~ ""
+      )
+    } else {
+      # For other formats - use asterisks
+      dplyr::case_when(
+        p_val < 0.001 ~ "***",
+        p_val < 0.01  ~ "**",
+        p_val < 0.05  ~ "*",
+        TRUE          ~ ""
+      )
+    }
+  }
+
   if (format_type == "latex" && ci) {
     # LaTeX formatting with CI (for TikZ only)
     ci_lower_str <- format2(med_df$ci_lower, decimals)
@@ -184,19 +217,19 @@ med_extract_coefs <- function(mediation_out,
 
     acme <- paste0(
       format2(med_df$estimate[1], digits = decimals),
-      "$^{", starify(med_df$p_value[1]), "}$",
+      "$^{", get_sig_indicator(med_df$p_value[1], "latex"), "}$",
       " \\\\ \\textcolor{gray}{\\small{\\,\\,\\,", med_ci[1], "}}"
     )
 
     ade <- paste0(
       format2(med_df$estimate[2], digits = decimals),
-      "$^{", starify(med_df$p_value[2]), "}$",
+      "$^{", get_sig_indicator(med_df$p_value[2], "latex"), "}$",
       " \\\\ \\textcolor{gray}{\\small{", med_ci[2], "}}"
     )
 
     tot <- paste0(
       format2(med_df$estimate[3], digits = decimals),
-      "$^{", starify(med_df$p_value[3]), "}$",
+      "$^{", get_sig_indicator(med_df$p_value[3], "latex"), "}$",
       " \\\\ \\textcolor{gray}{\\small{", med_ci[3], "}}"
     )
 
@@ -215,7 +248,7 @@ med_extract_coefs <- function(mediation_out,
 
     x_on_m <- paste0(
       format2(m1_df$estimate[2], digits = decimals),
-      "$^{", starify(m1_df$p.value[2]), "}$",
+      "$^{", get_sig_indicator(m1_df$p.value[2], "latex"), "}$",
       " \\\\ \\textcolor{gray}{\\small{", m1_ci, "\\,\\,\\,}}"
     )
 
@@ -226,19 +259,19 @@ med_extract_coefs <- function(mediation_out,
 
     acme <- paste0(
       format2(med_df$estimate[1], digits = decimals),
-      starify(med_df$p_value[1]),
+      get_sig_indicator(med_df$p_value[1], "html"),
       "\\n(", ci_lower_str[1], ", ", ci_upper_str[1], ")"
     )
 
     ade <- paste0(
       format2(med_df$estimate[2], digits = decimals),
-      starify(med_df$p_value[2]),
+      get_sig_indicator(med_df$p_value[2], "html"),
       "\\n(", ci_lower_str[2], ", ", ci_upper_str[2], ")"
     )
 
     tot <- paste0(
       format2(med_df$estimate[3], digits = decimals),
-      starify(med_df$p_value[3]),
+      get_sig_indicator(med_df$p_value[3], "html"),
       "\\n(", ci_lower_str[3], ", ", ci_upper_str[3], ")"
     )
 
@@ -250,31 +283,31 @@ med_extract_coefs <- function(mediation_out,
 
     x_on_m <- paste0(
       format2(m1_df$estimate[2], digits = decimals),
-      starify(m1_df$p.value[2]),
+      get_sig_indicator(m1_df$p.value[2], "html"),
       "\\n(", format2(m1_df$conf.low[2], decimals), ", ",
       format2(m1_df$conf.high[2], decimals), ")"
     )
 
   } else if (format_type == "plain" && ci) {
-    # Plain text formatting with CI (for plotmat)
+    # Plain text formatting with CI (for plotmat) - NO ASTERISKS
     ci_lower_str <- format2(med_df$ci_lower, decimals)
     ci_upper_str <- format2(med_df$ci_upper, decimals)
 
     acme <- paste0(
       format2(med_df$estimate[1], digits = decimals),
-      starify(med_df$p_value[1]),
+      get_sig_indicator(med_df$p_value[1], "plain"),
       "\n(", ci_lower_str[1], ", ", ci_upper_str[1], ")"
     )
 
     ade <- paste0(
       format2(med_df$estimate[2], digits = decimals),
-      starify(med_df$p_value[2]),
+      get_sig_indicator(med_df$p_value[2], "plain"),
       "\n(", ci_lower_str[2], ", ", ci_upper_str[2], ")"
     )
 
     tot <- paste0(
       format2(med_df$estimate[3], digits = decimals),
-      starify(med_df$p_value[3]),
+      get_sig_indicator(med_df$p_value[3], "plain"),
       "\n(", ci_lower_str[3], ", ", ci_upper_str[3], ")"
     )
 
@@ -286,37 +319,66 @@ med_extract_coefs <- function(mediation_out,
 
     x_on_m <- paste0(
       format2(m1_df$estimate[2], digits = decimals),
-      starify(m1_df$p.value[2]),
+      get_sig_indicator(m1_df$p.value[2], "plain"),
       "\n(", format2(m1_df$conf.low[2], decimals), ", ",
       format2(m1_df$conf.high[2], decimals), ")"
     )
 
   } else {
-    # Simple format without CI (works for all)
-    acme <- paste0(
-      format2(med_df$estimate[1], digits = decimals),
-      starify(med_df$p_value[1])
-    )
+    # Simple format without CI
+    if (format_type == "plain") {
+      # For plotmat - no asterisks
+      acme <- paste0(
+        format2(med_df$estimate[1], digits = decimals),
+        get_sig_indicator(med_df$p_value[1], "plain")
+      )
 
-    ade <- paste0(
-      format2(med_df$estimate[2], digits = decimals),
-      starify(med_df$p_value[2])
-    )
+      ade <- paste0(
+        format2(med_df$estimate[2], digits = decimals),
+        get_sig_indicator(med_df$p_value[2], "plain")
+      )
 
-    tot <- paste0(
-      format2(med_df$estimate[3], digits = decimals),
-      starify(med_df$p_value[3])
-    )
+      tot <- paste0(
+        format2(med_df$estimate[3], digits = decimals),
+        get_sig_indicator(med_df$p_value[3], "plain")
+      )
 
-    m1_df <- broom::tidy(model_x_on_m)
-    if (exp) {
-      m1_df$estimate[2] <- exp(m1_df$estimate[2])
+      m1_df <- broom::tidy(model_x_on_m)
+      if (exp) {
+        m1_df$estimate[2] <- exp(m1_df$estimate[2])
+      }
+
+      x_on_m <- paste0(
+        format2(m1_df$estimate[2], digits = decimals),
+        get_sig_indicator(m1_df$p.value[2], "plain")
+      )
+    } else {
+      # For other formats - use asterisks
+      acme <- paste0(
+        format2(med_df$estimate[1], digits = decimals),
+        get_sig_indicator(med_df$p_value[1], format_type)
+      )
+
+      ade <- paste0(
+        format2(med_df$estimate[2], digits = decimals),
+        get_sig_indicator(med_df$p_value[2], format_type)
+      )
+
+      tot <- paste0(
+        format2(med_df$estimate[3], digits = decimals),
+        get_sig_indicator(med_df$p_value[3], format_type)
+      )
+
+      m1_df <- broom::tidy(model_x_on_m)
+      if (exp) {
+        m1_df$estimate[2] <- exp(m1_df$estimate[2])
+      }
+
+      x_on_m <- paste0(
+        format2(m1_df$estimate[2], digits = decimals),
+        get_sig_indicator(m1_df$p.value[2], format_type)
+      )
     }
-
-    x_on_m <- paste0(
-      format2(m1_df$estimate[2], digits = decimals),
-      starify(m1_df$p.value[2])
-    )
   }
 
   return(data.frame(
@@ -486,23 +548,37 @@ med_diagram_plotmat <- function(data,
     stop("Package 'diagram' is needed. Please install it.", call. = FALSE)
   }
 
-  # Simple approach: matrix with the coefficient values as edge labels
-  # Matrix shows flow from rows to columns
-  # Order: Row/Col 1 = Mediator, 2 = Treatment, 3 = Outcome
+  # Clean the coefficient labels - wrap in quotes to prevent parsing
+  # This prevents asterisks from being interpreted as operators
+  clean_coef <- function(x) {
+    # Remove asterisks and clean up the string for plotmat
+    x <- gsub("\\*", "", x)  # Remove asterisks
+    return(x)
+  }
+
+  # Matrix shows flow from COLUMNS to ROWS (transpose of what we had)
+  # Order: 1 = Mediator (top), 2 = Treatment (bottom-left), 3 = Outcome (bottom-right)
   M <- matrix(
     nrow = 3,
     ncol = 3,
-    byrow = TRUE,
+    byrow = FALSE,  # Fill by column
     data = c(
-      0, 0, as.character(data$coef_my),     # Mediator -> Outcome
-      as.character(data$coef_xm), 0, as.character(data$coef_xy),  # Treatment -> Mediator & Outcome
-      0, 0, 0                                # Outcome (no outgoing)
+      0, clean_coef(data$coef_xm), 0,     # Column 1: flows FROM Mediator
+      0, 0, 0,                             # Column 2: flows FROM Treatment
+      clean_coef(data$coef_my), clean_coef(data$coef_xy), 0  # Column 3: flows FROM Outcome
     )
   )
 
+  # Actually, plotmat wants flows FROM rows TO columns, so let's fix this:
+  # Reorder to match expected layout
+  M_correct <- matrix(0, nrow = 3, ncol = 3)
+  M_correct[2, 1] <- clean_coef(data$coef_xm)  # Treatment -> Mediator
+  M_correct[2, 3] <- clean_coef(data$coef_xy)  # Treatment -> Outcome
+  M_correct[1, 3] <- clean_coef(data$coef_my)  # Mediator -> Outcome
+
   # Create the plot
   diagram::plotmat(
-    M,
+    M_correct,
     pos = c(1, 2),  # Layout: 1 node top row, 2 nodes bottom row
     name = c(data$lab_m, data$lab_x, data$lab_y),  # Labels for nodes
     box.type = "rect",
