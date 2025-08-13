@@ -9,7 +9,8 @@ med_diagram_plotmat(
   box_size = 0.15,
   box_prop = 0.5,
   arrow_size = 1.5,
-  text_size = 1
+  text_size = 1,
+  ...
 )
 
 med_diagram_plotmat(
@@ -17,7 +18,8 @@ med_diagram_plotmat(
   box_size = 0.15,
   box_prop = 0.5,
   arrow_size = 1.5,
-  text_size = 1
+  text_size = 1,
+  ...
 )
 }
 \arguments{
@@ -30,6 +32,8 @@ med_diagram_plotmat(
 \item{arrow_size}{Size of arrows}
 
 \item{text_size}{Size of text}
+
+\item{...}{Additional arguments (ignored)}
 }
 \value{
 Plot object (displays immediately)

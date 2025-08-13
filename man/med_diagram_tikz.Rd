@@ -11,7 +11,8 @@ med_diagram_tikz(
   box_height = "0.4in",
   caption = "",
   label = "",
-  include_figure = TRUE
+  include_figure = TRUE,
+  ...
 )
 
 med_diagram_tikz(
@@ -21,7 +22,8 @@ med_diagram_tikz(
   box_height = "0.4in",
   caption = "",
   label = "",
-  include_figure = TRUE
+  include_figure = TRUE,
+  ...
 )
 }
 \arguments{
@@ -38,6 +40,8 @@ med_diagram_tikz(
 \item{label}{LaTeX label for cross-referencing}
 
 \item{include_figure}{Include figure environment?}
+
+\item{...}{Additional arguments (ignored)}
 }
 \value{
 TikZ code as string

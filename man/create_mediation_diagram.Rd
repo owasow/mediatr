@@ -38,6 +38,14 @@ create_mediation_diagram(
 \item{output_type}{One of "graphviz", "plotmat", "tikz", or "all"}
 
 \item{...}{Additional arguments passed to specific diagram functions}
+
+\item{ci}{Include confidence intervals?}
+
+\item{total}{Include total effect?}
+
+\item{decimals}{Number of decimal places}
+
+\item{exp}{Exponentiate coefficients?}
 }
 \value{
 Diagram in specified format(s)

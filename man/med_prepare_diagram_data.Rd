@@ -13,7 +13,8 @@ med_prepare_diagram_data(
   ci = TRUE,
   total = TRUE,
   decimals = 2,
-  exp = FALSE
+  exp = FALSE,
+  format_type = "plain"
 )
 
 med_prepare_diagram_data(
@@ -25,7 +26,8 @@ med_prepare_diagram_data(
   ci = TRUE,
   total = TRUE,
   decimals = 2,
-  exp = FALSE
+  exp = FALSE,
+  format_type = "plain"
 )
 }
 \arguments{
@@ -46,6 +48,8 @@ med_prepare_diagram_data(
 \item{decimals}{Number of decimal places}
 
 \item{exp}{Exponentiate coefficients?}
+
+\item{format_type}{Type of formatting: "latex", "html", or "plain"}
 }
 \value{
 Data frame ready for diagram functions

@@ -9,7 +9,8 @@ med_extract_coefs(
   model_x_on_m,
   ci = TRUE,
   decimals = 2,
-  exp = FALSE
+  exp = FALSE,
+  format_type = "plain"
 )
 
 med_extract_coefs(
@@ -17,7 +18,8 @@ med_extract_coefs(
   model_x_on_m,
   ci = TRUE,
   decimals = 2,
-  exp = FALSE
+  exp = FALSE,
+  format_type = "plain"
 )
 }
 \arguments{
@@ -30,6 +32,8 @@ med_extract_coefs(
 \item{decimals}{Number of decimal places}
 
 \item{exp}{Exponentiate coefficients?}
+
+\item{format_type}{Type of formatting: "latex", "html", or "plain"}
 }
 \value{
 Data frame with formatted coefficient strings
