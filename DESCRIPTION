@@ -19,8 +19,8 @@ Imports:
     scales,
     broom,
     knitr,
-    purrr,
-    textutils
+    purrr
 Suggests:
     mediation,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    textutils
