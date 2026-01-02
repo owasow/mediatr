@@ -1,11 +1,13 @@
 Package: mediatr
 Type: Package
-Title: Mediation Analysis Visualization Toolkit
-Version: 0.1.0
-Author: Your Name
-Maintainer: Your Name <your.email@example.com>
-Description: Create publication-ready mediation analysis diagrams and tables.
-    Supports multiple output formats including GraphViz, plotmat, and TikZ.
+Title: Publication-Ready Mediation Analysis Diagrams
+Version: 0.2.0
+Authors@R: person("Omar", "Wasow", email = "owasow@gmail.com",
+                  role = c("aut", "cre"))
+Description: Create publication-ready mediation analysis diagrams and tables
+    for LaTeX documents. Extracts coefficients from mediation package output
+    and generates TikZ code for path diagrams with customizable formatting
+    for articles and slides.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -16,8 +18,9 @@ Imports:
     stringr,
     scales,
     broom,
-    knitr
+    knitr,
+    purrr,
+    textutils
 Suggests:
-    DiagrammeR,
-    diagram,
-    mediation
+    mediation,
+    testthat (>= 3.0.0)
