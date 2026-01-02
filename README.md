@@ -70,7 +70,22 @@ Add to your preamble:
 ```latex
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta}
+\usepackage{xcolor}
 ```
+
+## Examples
+
+Minimal working LaTeX examples are included in the package:
+
+```r
+# Find examples folder
+system.file("examples", package = "mediatr")
+```
+
+- `mediatr_example_article.tex` — article/paper template
+- `mediatr_example_beamer.tex` — Beamer slides template
+
+Both show the required preamble and how to `\input{}` generated diagrams.
 
 ## Functions
 
