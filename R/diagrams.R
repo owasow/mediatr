@@ -287,9 +287,7 @@ med_diagram_tikz <- function(data,
   data$cshift     <- cshift
 
   glue::glue_data(data,
-"%\\begin{figure}
-%\\begin{center}
-\\begin{tikzpicture}[scale=<<scale>>, >=stealth, font=\\sffamily]
+"\\begin{tikzpicture}[scale=<<scale>>, >=stealth, font=\\sffamily]
 <<text_size>>
 \\tikzset{mynode/.style={draw, text centered, text width = <<box_width>>, minimum height = <<box_height>>, align=center} }
 \\tikzset{>={Latex[width=<<arrow_size>>,length=<<arrow_size>>]}}
@@ -302,9 +300,6 @@ med_diagram_tikz <- function(data,
 \\path[->] (x) edge node[below, yshift=<<cshift>>] {Total: <<coef_tot>>} (y);
 \\node at (0, 3.5) {\\scriptsize <<diag_label>>};
 \\end{tikzpicture}
-%\\caption{<<caption>> \\label{<<label>>}}
-%\\end{center}
-%\\end{figure}
 ",
                   .open = "<<", .close = ">>"
   )
@@ -360,8 +355,8 @@ med_diagram_acme_tikz <- function(data,
     data$text_size  <- if (is.null(text_size)) "\\scriptsize" else text_size
     data$ashift     <- if (is.null(ashift)) "-5pt" else ashift
     data$bshift     <- if (is.null(bshift)) "5pt" else bshift
-    fig_begin <- "%\\begin{figure}\n%\\begin{center}"
-    fig_end   <- "%\\end{center}\n%\\end{figure}"
+    fig_begin <- ""
+    fig_end   <- ""
   } else if (mode == "slide") {
     data$scale      <- if (is.null(scale)) 0.8 else scale
     data$box_width  <- if (is.null(box_width)) "1.25in" else box_width
@@ -380,13 +375,13 @@ med_diagram_acme_tikz <- function(data,
     data$text_size  <- if (is.null(text_size)) "\\normalsize" else text_size
     data$ashift     <- if (is.null(ashift)) "-5pt" else ashift
     data$bshift     <- if (is.null(bshift)) "10pt" else bshift
-    fig_begin <- "%\\begin{figure}\n%\\begin{center}"
-    fig_end   <- "%\\end{center}\n%\\end{figure}"
+    fig_begin <- ""
+    fig_end   <- ""
   }
 
   data$diag_label <- diag_label
 
-  paste0(fig_begin, "\n",
+  paste0(if (nchar(fig_begin) > 0) paste0(fig_begin, "\n") else "",
          glue::glue_data(data,
 "\\begin{tikzpicture}[scale=<<scale>>, >=stealth, font=\\sffamily]
 <<text_size>>
@@ -403,5 +398,5 @@ med_diagram_acme_tikz <- function(data,
 \\node at (-1.5, 6.5) {\\scriptsize <<diag_label>>};
 \\end{tikzpicture}",
                          .open = "<<", .close = ">>"
-         ), "\n", fig_end)
+         ), if (nchar(fig_end) > 0) paste0("\n", fig_end) else "")
 }
