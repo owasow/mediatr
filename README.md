@@ -56,6 +56,30 @@ tikz_code <- med_diagram_acme_tikz(diagram_data)
 writeLines(tikz_code, "mediation_diagram.tex")
 ```
 
+## Inline Output with cat()
+
+In Sweave (.Rnw) or knitr documents, you can output diagrams directly inline using `cat()` instead of writing to a separate file:
+
+```r
+# In a Sweave/knitr chunk with results="asis"
+cat(med_diagram_acme_tikz(diagram_data, scale = 0.5))
+```
+
+This approach:
+
+- Avoids creating intermediate .tex files
+- Keeps diagram code directly in your document flow
+- Works well when diagrams are generated dynamically
+
+Example chunk header for .Rnw files:
+```
+<<diagram, results="asis", echo=FALSE>>=
+cat(med_diagram_acme_tikz(diagram_data, scale = 0.5))
+@
+```
+
+For R Markdown with PDF output, use a raw LaTeX block or `results='asis'` chunk.
+
 ## Diagram Modes
 
 Two preset modes optimize output for different contexts:
