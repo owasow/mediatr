@@ -7,7 +7,7 @@ Authors@R: person("Omar", "Wasow", email = "owasow@gmail.com",
 Description: Create publication-ready mediation analysis diagrams and tables
     for LaTeX documents. Extracts coefficients from mediation package output
     and generates TikZ code for path diagrams with customizable formatting
-    for articles and slides.
+    for articles and slides. Also supports dual mediator SEM models from lavaan.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -21,6 +21,7 @@ Imports:
     knitr,
     purrr
 Suggests:
+    lavaan,
     mediation,
     testthat (>= 3.0.0),
     textutils
