@@ -13,9 +13,9 @@ sem_dual_med_diagram_tikz(
   arrow_size = NULL,
   text_size = NULL,
   diag_label = "",
-  show_indirect = TRUE,
-  m1_color = "black",
-  m2_color = "black"
+  show_paths = FALSE,
+  m1_color = "blue!70!black",
+  m2_color = "red!70!black"
 )
 }
 \arguments{
@@ -35,19 +35,19 @@ sem_dual_med_diagram_tikz(
 
 \item{diag_label}{Optional label in top-left corner}
 
-\item{show_indirect}{Logical: show curved indirect effect arrows? (default: TRUE)}
+\item{show_paths}{Logical: show individual a/b path coefficients? (default: FALSE)}
 
-\item{m1_color}{Color for M1 path (default: "black")}
+\item{m1_color}{Color for M1 pathway (default: "blue!70!black")}
 
-\item{m2_color}{Color for M2 path (default: "black")}
+\item{m2_color}{Color for M2 pathway (default: "red!70!black")}
 }
 \value{
 Character string containing TikZ code
 }
 \description{
 Generates TikZ code for a path diagram with two mediators (M1 and M2),
-showing all paths and indirect effects. The diagram uses a diamond layout
-with X on the left, Y on the right, and M1/M2 above.
+emphasizing the indirect effects (ACMEs) similar to single mediator diagrams.
+Uses a diamond layout with X on the left, Y on the right, and M1/M2 above/below.
 }
 \examples{
 \dontrun{

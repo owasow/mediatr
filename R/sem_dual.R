@@ -300,8 +300,8 @@ sem_dual_med_data_prep_df <- function(sem_fit,
 #' Create TikZ diagram for SEM dual mediator model
 #'
 #' Generates TikZ code for a path diagram with two mediators (M1 and M2),
-#' showing all paths and indirect effects. The diagram uses a diamond layout
-#' with X on the left, Y on the right, and M1/M2 above.
+#' emphasizing the indirect effects (ACMEs) similar to single mediator diagrams.
+#' Uses a diamond layout with X on the left, Y on the right, and M1/M2 above/below.
 #'
 #' @param data Data frame from \code{sem_dual_med_data_prep_df()}
 #' @param mode Output mode: "article" or "slide" (sets default sizes)
@@ -311,9 +311,9 @@ sem_dual_med_data_prep_df <- function(sem_fit,
 #' @param arrow_size Size of arrow heads
 #' @param text_size LaTeX size command
 #' @param diag_label Optional label in top-left corner
-#' @param show_indirect Logical: show curved indirect effect arrows? (default: TRUE)
-#' @param m1_color Color for M1 path (default: "black")
-#' @param m2_color Color for M2 path (default: "black")
+#' @param show_paths Logical: show individual a/b path coefficients? (default: FALSE)
+#' @param m1_color Color for M1 pathway (default: "blue!70!black")
+#' @param m2_color Color for M2 pathway (default: "red!70!black")
 #' @return Character string containing TikZ code
 #' @export
 #' @examples
@@ -330,9 +330,9 @@ sem_dual_med_diagram_tikz <- function(data,
                                        arrow_size = NULL,
                                        text_size = NULL,
                                        diag_label = "",
-                                       show_indirect = TRUE,
-                                       m1_color = "black",
-                                       m2_color = "black") {
+                                       show_paths = FALSE,
+                                       m1_color = "blue!70!black",
+                                       m2_color = "red!70!black") {
 
   # Encode labels for LaTeX
   data$lab_x <- latexify(data$lab_x)
@@ -365,23 +365,28 @@ sem_dual_med_diagram_tikz <- function(data,
   data$m1_color <- m1_color
   data$m2_color <- m2_color
 
-  # Build indirect effect arrows if requested
-  if (show_indirect) {
-    indirect_arrows <- glue::glue_data(data,
-"% Indirect effect arrows (curved, above)
-\\draw[->, <<m1_color>>, dashed] (x.north) to[out=60, in=180] node[midway, above left, align=center] {\\textcolor{<<m1_color>>}{ACME$_1$: <<coef_ind_m1>>}} (m1.west);
-\\draw[->, <<m1_color>>, dashed] (m1.east) to[out=0, in=120] (y.north);
-\\draw[->, <<m2_color>>, dotted] (x.south) to[out=-60, in=180] node[midway, below left, align=center] {\\textcolor{<<m2_color>>}{ACME$_2$: <<coef_ind_m2>>}} (m2.west);
-\\draw[->, <<m2_color>>, dotted] (m2.east) to[out=0, in=-120] (y.south);",
-                                       .open = "<<", .close = ">>"
+  # Path labels (optional - show a/b coefficients on arrows)
+  if (show_paths) {
+    path_labels <- glue::glue_data(data,
+"\\path[->, <<m1_color>>] (x) edge node[above left, align=center, xshift=-3pt] {\\textcolor{gray}{<<coef_a1>>}} (m1);
+\\path[->, <<m1_color>>] (m1) edge node[above right, align=center, xshift=3pt] {\\textcolor{gray}{<<coef_b1>>}} (y);
+\\path[->, <<m2_color>>] (x) edge node[below left, align=center, xshift=-3pt] {\\textcolor{gray}{<<coef_a2>>}} (m2);
+\\path[->, <<m2_color>>] (m2) edge node[below right, align=center, xshift=3pt] {\\textcolor{gray}{<<coef_b2>>}} (y);",
+                                    .open = "<<", .close = ">>"
     )
   } else {
-    indirect_arrows <- ""
+    path_labels <- glue::glue_data(data,
+"\\path[->, <<m1_color>>] (x) edge (m1);
+\\path[->, <<m1_color>>] (m1) edge (y);
+\\path[->, <<m2_color>>] (x) edge (m2);
+\\path[->, <<m2_color>>] (m2) edge (y);",
+                                    .open = "<<", .close = ">>"
+    )
   }
 
-  data$indirect_arrows <- indirect_arrows
+  data$path_labels <- path_labels
 
-  # Main diagram
+  # Main diagram with curved ACME arrows (like single mediator version)
   glue::glue_data(data,
 "\\begin{tikzpicture}[scale=<<scale>>, >=stealth, font=\\sffamily]
 <<text_size>>
@@ -392,14 +397,16 @@ sem_dual_med_diagram_tikz <- function(data,
 \\node[mynode] (y)  at (14, 0)  {<<lab_y>>};
 \\node[mynode] (m1) at (7, 4)   {<<lab_m1>>};
 \\node[mynode] (m2) at (7, -4)  {<<lab_m2>>};
-% Direct paths
-\\path[->, <<m1_color>>] (x) edge node[above left, align=center, xshift=-3pt] {$a_1$: <<coef_a1>>} (m1);
-\\path[->, <<m1_color>>] (m1) edge node[above right, align=center, xshift=3pt] {$b_1$: <<coef_b1>>} (y);
-\\path[->, <<m2_color>>] (x) edge node[below left, align=center, xshift=-3pt] {$a_2$: <<coef_a2>>} (m2);
-\\path[->, <<m2_color>>] (m2) edge node[below right, align=center, xshift=3pt] {$b_2$: <<coef_b2>>} (y);
-% Direct effect X -> Y
-\\path[->] (x) edge node[above, align=center, yshift=2pt] {$c'$: <<coef_c>>} (y);
-\\path[->] (x) edge node[below, align=center, yshift=-2pt] {Total: <<coef_total>>} (y);
+% Direct paths through mediators (thin, de-emphasized)
+<<path_labels>>
+% Curved ACME arrows (like single mediator diagrams)
+\\draw[->, <<m1_color>>, thick] (x.north east) to[out=30, in=150, looseness=0.8]
+  node[midway, above, align=center, yshift=2pt] {ACME$_1$: <<coef_ind_m1>>} (y.north west);
+\\draw[->, <<m2_color>>, thick] (x.south east) to[out=-30, in=-150, looseness=0.8]
+  node[midway, below, align=center, yshift=-2pt] {ACME$_2$: <<coef_ind_m2>>} (y.south west);
+% Direct effect X -> Y (ADE)
+\\path[->] (x) edge node[above, align=center, yshift=1pt] {ADE: <<coef_c>>} (y);
+\\path[->] (x) edge node[below, align=center, yshift=-5pt] {Total: <<coef_total>>} (y);
 % Label
 \\node at (-2, 5) {\\scriptsize <<diag_label>>};
 \\end{tikzpicture}",
