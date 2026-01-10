@@ -146,10 +146,7 @@ sem_dual_med_table <- function(sem_fit,
       ci_lower = paste0("(", pad(.data$ci_lower, .data$w), ", "),
       ci_upper = paste0(pad(.data$ci_upper, .data$w), ")"),
       p_value  = scales::pvalue(.data$p_value, accuracy = p_accuracy) %>%
-        purrr::when(
-          knitr::is_latex_output() ~ stringr::str_replace(., "<", "$<$"),
-          TRUE ~ .
-        )
+        stringr::str_replace("<", "< ")
     ) %>%
     dplyr::select("path", "estimate", "ci_lower", "ci_upper", "p_value") %>%
     dplyr::rename(
@@ -254,14 +251,16 @@ sem_dual_med_data_prep_df <- function(sem_fit,
     ci_lo <- row$ci.lower[1]
     ci_hi <- row$ci.upper[1]
 
+    # Format values before glue (to avoid delimiter issues)
+    est_fmt <- format2(est, decimals)
     star_str <- starify(pval, stars = stars, alpha = alpha)
 
     if (ci) {
       ci_str <- paste0("(", format2(ci_lo, decimals), ", ", format2(ci_hi, decimals), ")")
-      glue::glue("{format2(est, decimals)}$^{<<star_str>>}$ \\\\ \\textcolor{{gray}}{{<<ci_size>>{{<<ci_str>>}}}}",
+      glue::glue("<<est_fmt>>$^{<<star_str>>}$ \\\\ \\textcolor{{gray}}{{<<ci_size>>{{<<ci_str>>}}}}",
                  .open = "<<", .close = ">>")
     } else {
-      glue::glue("{format2(est, decimals)}$^{<<star_str>>}$",
+      glue::glue("<<est_fmt>>$^{<<star_str>>}$",
                  .open = "<<", .close = ">>")
     }
   }
