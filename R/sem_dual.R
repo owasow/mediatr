@@ -392,23 +392,23 @@ sem_dual_med_diagram_tikz <- function(data,
 <<text_size>>
 \\tikzset{mynode/.style={draw, text centered, text width = <<box_width>>, minimum height = <<box_height>>, align=center} }
 \\tikzset{>={Latex[width=<<arrow_size>>,length=<<arrow_size>>]}}
-% Nodes: Diamond layout with M1 top, M2 bottom
+% Nodes: Diamond layout with M1 top, M2 bottom (increased vertical spacing)
 \\node[mynode] (x)  at (0, 0)   {<<lab_x>>};
 \\node[mynode] (y)  at (14, 0)  {<<lab_y>>};
-\\node[mynode] (m1) at (7, 4)   {<<lab_m1>>};
-\\node[mynode] (m2) at (7, -4)  {<<lab_m2>>};
+\\node[mynode] (m1) at (7, 6)   {<<lab_m1>>};
+\\node[mynode] (m2) at (7, -6)  {<<lab_m2>>};
 % Direct paths through mediators (thin, de-emphasized)
 <<path_labels>>
-% Curved ACME arrows (like single mediator diagrams)
-\\draw[->, <<m1_color>>, thick] (x.north east) to[out=30, in=150, looseness=0.8]
-  node[midway, above, align=center, yshift=2pt] {ACME$_1$: <<coef_ind_m1>>} (y.north west);
-\\draw[->, <<m2_color>>, thick] (x.south east) to[out=-30, in=-150, looseness=0.8]
-  node[midway, below, align=center, yshift=-2pt] {ACME$_2$: <<coef_ind_m2>>} (y.south west);
+% Curved ACME arrows (like single mediator diagrams) - wider curves to clear mediators
+\\draw[->, <<m1_color>>, thick] (x.north east) to[out=45, in=135, looseness=0.5]
+  node[midway, above, align=center, yshift=4pt] {ACME$_1$: <<coef_ind_m1>>} (y.north west);
+\\draw[->, <<m2_color>>, thick] (x.south east) to[out=-45, in=-135, looseness=0.5]
+  node[midway, below, align=center, yshift=-4pt] {ACME$_2$: <<coef_ind_m2>>} (y.south west);
 % Direct effect X -> Y (ADE)
 \\path[->] (x) edge node[above, align=center, yshift=1pt] {ADE: <<coef_c>>} (y);
 \\path[->] (x) edge node[below, align=center, yshift=-5pt] {Total: <<coef_total>>} (y);
 % Label
-\\node at (-2, 5) {\\scriptsize <<diag_label>>};
+\\node at (-2, 7) {\\scriptsize <<diag_label>>};
 \\end{tikzpicture}",
                   .open = "<<", .close = ">>"
   )
