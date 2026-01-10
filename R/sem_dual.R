@@ -37,16 +37,16 @@ sem_dual_med_tidy <- function(sem_fit,
   # Extract parameter estimates with CIs
   params <- lavaan::parameterEstimates(sem_fit, ci = TRUE, level = conf.level)
 
-  # Default path labels
+  # Default path labels (using LaTeX arrows)
   if (is.null(path_labels)) {
     path_labels <- c(
-      a1 = "X -> M1 (a1)",
-      a2 = "X -> M2 (a2)",
-      b1 = "M1 -> Y (b1)",
-      b2 = "M2 -> Y (b2)",
-      c = "X -> Y direct (c)",
-      indirect_anger = "Indirect via M1",
-      indirect_fear = "Indirect via M2",
+      a1 = "$X \\rightarrow M_1$ (a1)",
+      a2 = "$X \\rightarrow M_2$ (a2)",
+      b1 = "$M_1 \\rightarrow Y$ (b1)",
+      b2 = "$M_2 \\rightarrow Y$ (b2)",
+      c = "$X \\rightarrow Y$ direct (c)",
+      indirect_anger = "Indirect via $M_1$",
+      indirect_fear = "Indirect via $M_2$",
       total_indirect = "Total Indirect",
       total = "Total Effect"
     )
@@ -118,9 +118,11 @@ sem_dual_med_table <- function(sem_fit,
   # Get sample size from lavaan
   nobs <- lavaan::nobs(sem_fit)
 
-  # Separate paths and effects
-  path_rows <- c("X -> M1 (a1)", "X -> M2 (a2)", "M1 -> Y (b1)", "M2 -> Y (b2)", "X -> Y direct (c)")
-  effect_rows <- c("Indirect via M1", "Indirect via M2", "Total Indirect", "Total Effect")
+  # Separate paths and effects (must match labels in sem_dual_med_tidy)
+  path_rows <- c("$X \\rightarrow M_1$ (a1)", "$X \\rightarrow M_2$ (a2)",
+                 "$M_1 \\rightarrow Y$ (b1)", "$M_2 \\rightarrow Y$ (b2)",
+                 "$X \\rightarrow Y$ direct (c)")
+  effect_rows <- c("Indirect via $M_1$", "Indirect via $M_2$", "Total Indirect", "Total Effect")
 
   # Filter based on options
   if (show_paths && show_effects) {
