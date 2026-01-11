@@ -685,6 +685,7 @@ sem_serial_med_diagram_tikz <- function(data,
   # Serial mediation diagram following standard layout:
   # X bottom-left, Y bottom-right, M1 top-center-left, M2 top-center-right
   # Diagonal edges from corners, horizontal edges from east/west
+  # All lines solid/same weight; path labels (a1, d21, etc.) before coefficients
   glue::glue_data(data,
 "\\begin{tikzpicture}[scale=<<scale>>, >=stealth, font=\\sffamily]
 <<text_size>>
@@ -695,23 +696,23 @@ sem_serial_med_diagram_tikz <- function(data,
 \\node[mynode] (y)  at (24, 0)    {<<lab_y>>};
 \\node[mynode] (m1) at (6, 8)     {<<lab_m1>>};
 \\node[mynode] (m2) at (18, 8)    {<<lab_m2>>};
-% a1: X top -> M1 corner (mirroring b2)
-\\path[->, <<m1_color>>, thick] (x.north) edge (m1.south west);
+% a1: X -> M1 (diagonal)
+\\path[->, <<m1_color>>] (x.north) edge (m1.south west);
 % d21: M1 -> M2 (horizontal, east to west)
-\\path[->, <<serial_color>>, thick] (m1.east) edge node[above, align=center] {<<coef_a2>>} (m2.west);
-% d1 (a2): X corner -> M2 corner (diagonal, crosses b1)
-\\path[->, <<m2_color>>, dashed] (x.north east) edge (m2.south west);
-% b1: M1 corner -> Y corner (diagonal, crosses d1)
+\\path[->, <<serial_color>>] (m1.east) edge node[above, align=center] {$d_{21}$: <<coef_a2>>} (m2.west);
+% d1: X -> M2 (diagonal, crosses b1)
+\\path[->, <<m2_color>>] (x.north east) edge (m2.south west);
+% b1: M1 -> Y (diagonal, crosses d1)
 \\path[->, <<m1_color>>] (m1.south east) edge (y.north west);
-% b2: M2 corner -> Y top (mirroring a1)
-\\path[->, <<m2_color>>, thick] (m2.south east) edge (y.north);
+% b2: M2 -> Y (diagonal)
+\\path[->, <<m2_color>>] (m2.south east) edge (y.north);
 % c': X -> Y (horizontal, east to west)
 \\path[->] (x.east) edge node[below, align=center, yshift=-5pt] {$c'$: <<coef_c>>} (y.west);
-% Coefficient labels: a1 left, d1 above, b1 above, b2 right
-\\node[<<m1_color>>, align=center] at (1, 5) {<<coef_a1>>};
-\\node[<<m2_color>>, align=center] at (8, 5) {<<coef_d1>>};
-\\node[<<m1_color>>, align=center] at (16, 5) {<<coef_b1>>};
-\\node[<<m2_color>>, align=center] at (23, 5) {<<coef_b2>>};
+% Coefficient labels with path names: a1 left, d1 above, b1 above, b2 right
+\\node[<<m1_color>>, align=center] at (1, 5) {$a_1$: <<coef_a1>>};
+\\node[<<m2_color>>, align=center] at (8, 5) {$d_1$: <<coef_d1>>};
+\\node[<<m1_color>>, align=center] at (16, 5) {$b_1$: <<coef_b1>>};
+\\node[<<m2_color>>, align=center] at (23, 5) {$b_2$: <<coef_b2>>};
 % Indirect effect summary below
 \\node[align=center] at (12, -2.5) {
   \\textcolor{<<m1_color>>}{Via $M_1$: <<coef_ind_m1>>} \\quad
@@ -719,6 +720,12 @@ sem_serial_med_diagram_tikz <- function(data,
   \\textcolor{<<m2_color>>}{Via $M_2$: <<coef_ind_m2>>}
 };
 \\node[align=center] at (12, -4) {Total Indirect: <<coef_total_ind>> \\quad Total: <<coef_total>>};
+% Color legend
+\\node[align=left, anchor=west] at (0, -5.5) {
+  \\scriptsize \\textcolor{<<m1_color>>}{Blue: paths via $M_1$} \\quad
+  \\textcolor{<<m2_color>>}{Red: paths via $M_2$} \\quad
+  \\textcolor{<<serial_color>>}{Purple: $M_1 \\rightarrow M_2$ serial link}
+};
 % Label
 \\node at (-2, 9) {\\scriptsize <<diag_label>>};
 \\end{tikzpicture}",
