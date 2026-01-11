@@ -133,11 +133,6 @@ sem_dual_med_table <- function(sem_fit,
     tidy_df <- tidy_df %>% dplyr::filter(.data$path %in% effect_rows)
   }
 
-  # Set knitr label if available
-  if (exists("opts_current", where = asNamespace("knitr"))) {
-    knitr::opts_current$set(label = label)
-  }
-
   # Format the table
   tidy_df %>%
     dplyr::mutate(
@@ -495,6 +490,237 @@ sem_dual_med_diagram_compact_tikz <- function(data,
 \\node[align=center] at (6, -1.5) {Total Indirect: <<coef_total_ind>>};
 % Label
 \\node at (-1.5, 7) {\\scriptsize <<diag_label>>};
+\\end{tikzpicture}",
+                  .open = "<<", .close = ">>"
+  )
+}
+
+
+#' Prepare data frame for SEM serial mediator diagrams
+#'
+#' Extracts path coefficients from a lavaan SEM serial mediation model
+#' (X → M1 → M2 → Y) and formats them for TikZ diagram generation.
+#'
+#' @param sem_fit A fitted lavaan model object with serial mediation structure
+#' @param lab_x Label for treatment/independent variable (X)
+#' @param lab_y Label for outcome/dependent variable (Y)
+#' @param lab_m1 Label for first mediator (M1)
+#' @param lab_m2 Label for second mediator (M2)
+#' @param mode Output mode: "article" (compact) or "slide" (spacious)
+#' @param ci Logical: include confidence intervals?
+#' @param decimals Number of decimal places (default: 2)
+#' @param stars Number of significance tiers (default: 3)
+#' @param alpha Significance threshold for single-tier mode (default: 0.05)
+#' @param path_labels Named vector mapping lavaan labels to paths.
+#'   Default expects: a1 (X->M1), a2 (M1->M2), d1 (X->M2), b1 (M1->Y), b2 (M2->Y), c (X->Y),
+#'   ind_serial, ind_m1, ind_m2
+#' @return Data frame with labels and formatted coefficients
+#' @export
+sem_serial_med_data_prep_df <- function(sem_fit,
+                                         lab_x,
+                                         lab_y,
+                                         lab_m1,
+                                         lab_m2,
+                                         mode = "article",
+                                         ci = NULL,
+                                         decimals = 2,
+                                         stars = 3,
+                                         alpha = 0.05,
+                                         path_labels = NULL) {
+
+  if (!requireNamespace("lavaan", quietly = TRUE)) {
+    stop("Package 'lavaan' is required. Install with: install.packages('lavaan')")
+  }
+
+  # Set mode-specific defaults
+  if (mode == "article") {
+    ci_default <- FALSE
+    ci_size <- ""
+  } else {
+    ci_default <- TRUE
+    ci_size <- "\\small"
+  }
+
+  if (is.null(ci)) {
+    ci <- ci_default
+  }
+
+  # Default path labels for serial mediation
+  if (is.null(path_labels)) {
+    path_labels <- c(
+      a1 = "a1",           # X -> M1
+      a2 = "a2",           # M1 -> M2
+      d1 = "d1",           # X -> M2 (direct)
+      b1 = "b1",           # M1 -> Y
+      b2 = "b2",           # M2 -> Y
+      c = "c",             # X -> Y (direct)
+      ind_serial = "ind_serial",   # a1 * a2 * b2
+      ind_m1 = "ind_teach",        # a1 * b1
+      ind_m2 = "ind_enrb",         # d1 * b2
+      total_indirect = "total_indirect",
+      total = "total"
+    )
+  }
+
+  # Extract parameter estimates
+  params <- lavaan::parameterEstimates(sem_fit, ci = TRUE, level = 0.95)
+
+  # Helper to extract and format a coefficient
+  format_coef <- function(label_to_find, params, decimals, stars, alpha, ci, ci_size) {
+    row <- params %>% dplyr::filter(.data$label == label_to_find)
+
+    if (nrow(row) == 0) {
+      return(NA_character_)
+    }
+
+    est <- row$est[1]
+    pval <- row$pvalue[1]
+    ci_lo <- row$ci.lower[1]
+    ci_hi <- row$ci.upper[1]
+
+    est_fmt <- format2(est, decimals)
+    star_str <- starify(pval, stars = stars, alpha = alpha)
+
+    if (ci) {
+      ci_str <- paste0("(", format2(ci_lo, decimals), ", ", format2(ci_hi, decimals), ")")
+      glue::glue("<<est_fmt>>$^{<<star_str>>}$ \\\\ \\textcolor{{gray}}{{<<ci_size>>{{<<ci_str>>}}}}",
+                 .open = "<<", .close = ">>")
+    } else {
+      glue::glue("<<est_fmt>>$^{<<star_str>>}$",
+                 .open = "<<", .close = ">>")
+    }
+  }
+
+  # Extract all coefficients
+  coef_a1 <- format_coef(path_labels["a1"], params, decimals, stars, alpha, ci, ci_size)
+  coef_a2 <- format_coef(path_labels["a2"], params, decimals, stars, alpha, ci, ci_size)
+  coef_d1 <- format_coef(path_labels["d1"], params, decimals, stars, alpha, ci, ci_size)
+  coef_b1 <- format_coef(path_labels["b1"], params, decimals, stars, alpha, ci, ci_size)
+  coef_b2 <- format_coef(path_labels["b2"], params, decimals, stars, alpha, ci, ci_size)
+  coef_c <- format_coef(path_labels["c"], params, decimals, stars, alpha, ci, ci_size)
+  coef_ind_serial <- format_coef(path_labels["ind_serial"], params, decimals, stars, alpha, ci, ci_size)
+  coef_ind_m1 <- format_coef(path_labels["ind_m1"], params, decimals, stars, alpha, ci, ci_size)
+  coef_ind_m2 <- format_coef(path_labels["ind_m2"], params, decimals, stars, alpha, ci, ci_size)
+  coef_total_ind <- format_coef(path_labels["total_indirect"], params, decimals, stars, alpha, ci, ci_size)
+  coef_total <- format_coef(path_labels["total"], params, decimals, stars, alpha, ci, ci_size)
+
+  data.frame(
+    lab_x = lab_x,
+    lab_m1 = lab_m1,
+    lab_m2 = lab_m2,
+    lab_y = lab_y,
+    coef_a1 = as.character(coef_a1),
+    coef_a2 = as.character(coef_a2),
+    coef_d1 = as.character(coef_d1),
+    coef_b1 = as.character(coef_b1),
+    coef_b2 = as.character(coef_b2),
+    coef_c = as.character(coef_c),
+    coef_ind_serial = as.character(coef_ind_serial),
+    coef_ind_m1 = as.character(coef_ind_m1),
+    coef_ind_m2 = as.character(coef_ind_m2),
+    coef_total_ind = as.character(coef_total_ind),
+    coef_total = as.character(coef_total),
+    stringsAsFactors = FALSE
+  )
+}
+
+
+#' Create TikZ diagram for SEM serial mediator model
+#'
+#' Generates TikZ code for a serial mediation path diagram where
+#' X → M1 → M2 → Y, with M1 and M2 arranged in sequence (not parallel).
+#' Shows all paths including direct effects and the serial indirect chain.
+#'
+#' @param data Data frame from \code{sem_serial_med_data_prep_df()}
+#' @param mode Output mode: "article" or "slide"
+#' @param scale Overall diagram scale
+#' @param box_width Width of node boxes
+#' @param box_height Height of node boxes
+#' @param arrow_size Size of arrow heads
+#' @param text_size LaTeX size command
+#' @param diag_label Optional label in top-left corner
+#' @param m1_color Color for M1 pathway (default: "blue!70!black")
+#' @param m2_color Color for M2 pathway (default: "red!70!black")
+#' @param serial_color Color for serial pathway (default: "purple!70!black")
+#' @return Character string containing TikZ code
+#' @export
+sem_serial_med_diagram_tikz <- function(data,
+                                         mode = "article",
+                                         scale = NULL,
+                                         box_width = NULL,
+                                         box_height = NULL,
+                                         arrow_size = NULL,
+                                         text_size = NULL,
+                                         diag_label = "",
+                                         m1_color = "blue!70!black",
+                                         m2_color = "red!70!black",
+                                         serial_color = "purple!70!black") {
+
+  # Encode labels for LaTeX
+  data$lab_x <- latexify(data$lab_x)
+  data$lab_y <- latexify(data$lab_y)
+  data$lab_m1 <- latexify(data$lab_m1)
+  data$lab_m2 <- latexify(data$lab_m2)
+
+  # Set defaults based on mode
+  if (mode == "article") {
+    data$scale      <- if (is.null(scale)) 0.4 else scale
+    data$box_width  <- if (is.null(box_width)) ".85in" else box_width
+    data$box_height <- if (is.null(box_height)) ".4in" else box_height
+    data$arrow_size <- if (is.null(arrow_size)) "1.5mm" else arrow_size
+    data$text_size  <- if (is.null(text_size)) "\\scriptsize" else text_size
+  } else {
+    data$scale      <- if (is.null(scale)) 0.7 else scale
+    data$box_width  <- if (is.null(box_width)) "1.1in" else box_width
+    data$box_height <- if (is.null(box_height)) ".6in" else box_height
+    data$arrow_size <- if (is.null(arrow_size)) "2mm" else arrow_size
+    data$text_size  <- if (is.null(text_size)) "\\small" else text_size
+  }
+
+  data$diag_label <- diag_label
+  data$m1_color <- m1_color
+  data$m2_color <- m2_color
+  data$serial_color <- serial_color
+
+  # Serial mediation diagram following standard layout:
+  # X bottom-left, Y bottom-right, M1 top-center-left, M2 top-center-right
+  # Diagonal edges from corners, horizontal edges from east/west
+  glue::glue_data(data,
+"\\begin{tikzpicture}[scale=<<scale>>, >=stealth, font=\\sffamily]
+<<text_size>>
+\\tikzset{mynode/.style={draw, text centered, text width = <<box_width>>, minimum height = <<box_height>>, align=center} }
+\\tikzset{>={Latex[width=<<arrow_size>>,length=<<arrow_size>>]}}
+% Nodes: X and Y far apart at bottom, M1 and M2 spread above
+\\node[mynode] (x)  at (0, 0)     {<<lab_x>>};
+\\node[mynode] (y)  at (24, 0)    {<<lab_y>>};
+\\node[mynode] (m1) at (6, 8)     {<<lab_m1>>};
+\\node[mynode] (m2) at (18, 8)    {<<lab_m2>>};
+% a1: X top -> M1 corner (mirroring b2)
+\\path[->, <<m1_color>>, thick] (x.north) edge (m1.south west);
+% d21: M1 -> M2 (horizontal, east to west)
+\\path[->, <<serial_color>>, thick] (m1.east) edge node[above, align=center] {<<coef_a2>>} (m2.west);
+% d1 (a2): X corner -> M2 corner (diagonal, crosses b1)
+\\path[->, <<m2_color>>, dashed] (x.north east) edge (m2.south west);
+% b1: M1 corner -> Y corner (diagonal, crosses d1)
+\\path[->, <<m1_color>>] (m1.south east) edge (y.north west);
+% b2: M2 corner -> Y top (mirroring a1)
+\\path[->, <<m2_color>>, thick] (m2.south east) edge (y.north);
+% c': X -> Y (horizontal, east to west)
+\\path[->] (x.east) edge node[below, align=center, yshift=-5pt] {$c'$: <<coef_c>>} (y.west);
+% Coefficient labels: a1 left, d1 above, b1 above, b2 right
+\\node[<<m1_color>>, align=center] at (1, 5) {<<coef_a1>>};
+\\node[<<m2_color>>, align=center] at (8, 5) {<<coef_d1>>};
+\\node[<<m1_color>>, align=center] at (16, 5) {<<coef_b1>>};
+\\node[<<m2_color>>, align=center] at (23, 5) {<<coef_b2>>};
+% Indirect effect summary below
+\\node[align=center] at (12, -2.5) {
+  \\textcolor{<<m1_color>>}{Via $M_1$: <<coef_ind_m1>>} \\quad
+  \\textcolor{<<serial_color>>}{Serial: <<coef_ind_serial>>} \\quad
+  \\textcolor{<<m2_color>>}{Via $M_2$: <<coef_ind_m2>>}
+};
+\\node[align=center] at (12, -4) {Total Indirect: <<coef_total_ind>> \\quad Total: <<coef_total>>};
+% Label
+\\node at (-2, 9) {\\scriptsize <<diag_label>>};
 \\end{tikzpicture}",
                   .open = "<<", .close = ">>"
   )
