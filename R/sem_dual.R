@@ -402,6 +402,12 @@ sem_dual_med_diagram_tikz <- function(data,
 % Direct effect X -> Y (ADE)
 \\path[->] (x) edge node[above, align=center, yshift=1pt] {ADE: <<coef_c>>} (y);
 \\path[->] (x) edge node[below, align=center, yshift=-5pt] {Total: <<coef_total>>} (y);
+% Legend
+\\node[align=left, anchor=west] at (0, -8) {
+  \\scriptsize \\textcolor{<<m1_color>>}{\\rule{8pt}{2pt} paths via $M_1$} \\quad
+  \\textcolor{<<m2_color>>}{\\rule{8pt}{2pt} paths via $M_2$} \\quad
+  $^{*}p < 0.05$; $^{**}p < 0.01$; $^{***}p < 0.001$
+};
 % Label
 \\node at (-2, 7) {\\scriptsize <<diag_label>>};
 \\end{tikzpicture}",
@@ -488,6 +494,12 @@ sem_dual_med_diagram_compact_tikz <- function(data,
 \\node[<<m1_color>>, align=center] at (2, 7) {ACME$_1$: <<coef_ind_m1>>};
 \\node[<<m2_color>>, align=center] at (10, 7) {ACME$_2$: <<coef_ind_m2>>};
 \\node[align=center] at (6, -1.5) {Total Indirect: <<coef_total_ind>>};
+% Legend
+\\node[align=left, anchor=west] at (0, -3) {
+  \\scriptsize \\textcolor{<<m1_color>>}{\\rule{8pt}{2pt} paths via $M_1$} \\quad
+  \\textcolor{<<m2_color>>}{\\rule{8pt}{2pt} paths via $M_2$} \\quad
+  $^{*}p < 0.05$; $^{**}p < 0.01$; $^{***}p < 0.001$
+};
 % Label
 \\node at (-1.5, 7) {\\scriptsize <<diag_label>>};
 \\end{tikzpicture}",
@@ -737,11 +749,12 @@ sem_serial_med_diagram_tikz <- function(data,
   \\textcolor{<<m2_color>>}{Via $M_2$: <<coef_ind_m2>>}
 };
 \\node[align=center] at (12, -4) {Total Indirect: <<coef_total_ind>> \\quad Total: <<coef_total>>};
-% Color legend
+% Color legend + p-value key
 \\node[align=left, anchor=west] at (0, -5.5) {
-  \\scriptsize \\textcolor{<<m1_color>>}{Blue: paths via $M_1$} \\quad
-  \\textcolor{<<m2_color>>}{Red: paths via $M_2$} \\quad
-  \\textcolor{<<serial_color>>}{Purple: $M_1 \\rightarrow M_2$ serial link}
+  \\scriptsize \\textcolor{<<m1_color>>}{\\rule{8pt}{2pt} paths via $M_1$} \\quad
+  \\textcolor{<<m2_color>>}{\\rule{8pt}{2pt} paths via $M_2$} \\quad
+  \\textcolor{<<serial_color>>}{\\rule{8pt}{2pt} $M_1 \\rightarrow M_2$ serial} \\quad
+  $^{*}p < 0.05$; $^{**}p < 0.01$; $^{***}p < 0.001$
 };
 % Label
 \\node at (-2, 9) {\\scriptsize <<diag_label>>};
