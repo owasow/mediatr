@@ -396,9 +396,9 @@ sem_dual_med_diagram_tikz <- function(data,
 <<path_labels>>
 % Curved ACME arrows (like single mediator diagrams) - wider curves to clear mediators
 \\draw[->, <<m1_color>>, thick] (x.north east) to[out=35, in=145, looseness=0.5]
-  node[midway, above, align=center, yshift=4pt] {ACME$_1$: <<coef_ind_m1>>} (y.north west);
+  node[midway, above, align=center, yshift=2pt] {ACME$_1$: <<coef_ind_m1>>} (y.north west);
 \\draw[->, <<m2_color>>, thick] (x.south east) to[out=-35, in=-145, looseness=0.5]
-  node[midway, below, align=center, yshift=-4pt] {ACME$_2$: <<coef_ind_m2>>} (y.south west);
+  node[midway, below, align=center, yshift=-2pt] {ACME$_2$: <<coef_ind_m2>>} (y.south west);
 % Direct effect X -> Y (ADE)
 \\path[->] (x) edge node[above, align=center, yshift=1pt] {ADE: <<coef_c>>} (y);
 \\path[->] (x) edge node[below, align=center, yshift=-5pt] {Total: <<coef_total>>} (y);
