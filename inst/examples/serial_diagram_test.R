@@ -9,6 +9,8 @@
 #'   - \usepackage{xcolor}
 #' ---
 
+# Example: https://commons.wikimedia.org/wiki/File:Serial_Mediation_Model.png
+
 #+ setup, include=FALSE
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -51,5 +53,11 @@ test_data <- data.frame(
 
 #+ diagram, results='asis', echo=FALSE
 cat("\\begin{figure}[htbp]\n\\centering\n")
-cat(sem_serial_med_diagram_tikz(test_data, scale = 0.38, diag_label = "Model 2: Serial"))
-cat("\n\\caption{Serial mediation: Funding $\\rightarrow$ Teachers $\\rightarrow$ Enrollment $\\rightarrow$ Protest}\n\\end{figure}\n")
+cat(sem_serial_med_diagram_tikz(
+  test_data,
+  scale = 0.38,
+  diag_label = "Model 2: Serial"
+))
+cat(
+  "\n\\caption{Serial mediation: Funding $\\rightarrow$ Teachers $\\rightarrow$ Enrollment $\\rightarrow$ Protest}\n\\end{figure}\n"
+)
