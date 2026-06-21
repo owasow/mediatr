@@ -163,6 +163,7 @@ sem_dual_med_table <- function(sem_fit,
       escape   = FALSE,
       linesep  = ls,
       align    = c("l", "r", "r", "r"),
+      label    = if (nchar(label) > 0) sub("^tab:", "", label) else NULL,
       caption  = paste0(caption,
                         if (nchar(caption) > 0) " " else "",
                         "SEM dual mediator model (N = ", nobs, ").")
