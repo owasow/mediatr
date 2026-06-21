@@ -47,6 +47,8 @@ sem_dual_med_tidy <- function(sem_fit,
       c = "$X \\rightarrow Y$ direct (c)",
       indirect_anger = "Indirect via $M_1$",
       indirect_fear = "Indirect via $M_2$",
+      indirect_m1 = "Indirect via $M_1$",
+      indirect_m2 = "Indirect via $M_2$",
       total_indirect = "Total Indirect",
       total = "Total Effect"
     )
@@ -133,32 +135,37 @@ sem_dual_med_table <- function(sem_fit,
     tidy_df <- tidy_df %>% dplyr::filter(.data$path %in% effect_rows)
   }
 
-  # Format the table
+  # group separator between path coefficients and indirect/total effects
+  n_paths <- sum(tidy_df$path %in% path_rows)
+  n_row   <- nrow(tidy_df)
+  ls <- rep("", max(n_row - 1L, 0L))
+  if (n_paths > 0L && n_paths < n_row) ls[n_paths] <- "\\addlinespace"
+
+  # Format the table: combined (lower, upper) CI, booktabs, grouped rows
   tidy_df %>%
     dplyr::mutate(
-      estimate = round(.data$estimate, decimals),
-      ci_lower = format2(.data$ci_lower, digits = decimals),
-      ci_upper = format2(.data$ci_upper, digits = decimals),
-      w        = max(c(nchar(.data$ci_lower), nchar(.data$ci_upper))),
-      ci_lower = paste0("(", pad(.data$ci_lower, .data$w), ", "),
-      ci_upper = paste0(pad(.data$ci_upper, .data$w), ")"),
-      p_value  = scales::pvalue(.data$p_value, accuracy = p_accuracy) %>%
-        stringr::str_replace("<", "< ")
+      Estimate = format2(.data$estimate, digits = decimals),
+      lo       = format2(.data$ci_lower, digits = decimals),
+      hi       = format2(.data$ci_upper, digits = decimals),
+      w        = max(c(nchar(.data$lo), nchar(.data$hi))),
+      CI       = paste0("(", pad(.data$lo, .data$w), ", ", pad(.data$hi, .data$w), ")"),
+      p        = scales::pvalue(.data$p_value, accuracy = p_accuracy) %>%
+        stringr::str_replace("<", "$<$ ")
     ) %>%
-    dplyr::select("path", "estimate", "ci_lower", "ci_upper", "p_value") %>%
+    dplyr::select("path", "Estimate", "CI", "p") %>%
     dplyr::rename(
-      `Path`     = "path",
-      `Estimate` = "estimate",
-      `CI Lower` = "ci_lower",
-      `Upper`    = "ci_upper",
-      `p-value`  = "p_value"
+      `Path`      = "path",
+      `95\\% CI`  = "CI",
+      `$p$-value` = "p"
     ) %>%
     knitr::kable(
-      align   = c('l', rep('r', 4)),
-      escape  = FALSE,
-      caption = paste0(caption,
-                       if (nchar(caption) > 0) " " else "",
-                       "SEM dual mediator model (N = ", nobs, ").")
+      booktabs = TRUE,
+      escape   = FALSE,
+      linesep  = ls,
+      align    = c("l", "r", "r", "r"),
+      caption  = paste0(caption,
+                        if (nchar(caption) > 0) " " else "",
+                        "SEM dual mediator model (N = ", nobs, ").")
     )
 }
 
