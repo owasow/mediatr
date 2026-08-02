@@ -15,7 +15,10 @@ sem_dual_med_diagram_tikz(
   diag_label = "",
   show_paths = FALSE,
   m1_color = "blue!70!black",
-  m2_color = "red!70!black"
+  m2_color = "red!70!black",
+  bw = FALSE,
+  weight_by = c("none", "significance"),
+  tier_widths = c(0.3, 0.45, 0.8, 1.25)
 )
 }
 \arguments{
@@ -40,6 +43,18 @@ sem_dual_med_diagram_tikz(
 \item{m1_color}{Color for M1 pathway (default: "blue!70!black")}
 
 \item{m2_color}{Color for M2 pathway (default: "red!70!black")}
+
+\item{bw}{Logical; TRUE renders the diagram monochrome (both pathway
+colors black), so line weight is the only visual channel -- the
+recommended pairing with \code{weight_by = "significance"}.}
+
+\item{weight_by}{"none" (default; legacy output) or "significance": each
+arrow's line width encodes its own significance tier, read from the
+stars in its formatted coefficient (heavy p<.001, medium p<.01, light
+p<.05; nonsignificant paths render densely dotted so topology stays
+visible). Requires stars in the prep data frame.}
+
+\item{tier_widths}{Numeric length-4: line widths in pt for 0/1/2/3 stars.}
 }
 \value{
 Character string containing TikZ code
