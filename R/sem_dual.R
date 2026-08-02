@@ -320,12 +320,24 @@ sem_dual_med_data_prep_df <- function(sem_fit,
 #' @param bw Logical; TRUE renders the diagram monochrome (both pathway
 #'   colors black), so line weight is the only visual channel -- the
 #'   recommended pairing with \code{weight_by = "significance"}.
-#' @param weight_by "none" (default; legacy output) or "significance": each
-#'   arrow's line width encodes its own significance tier, read from the
-#'   stars in its formatted coefficient (heavy p<.001, medium p<.01, light
-#'   p<.05; nonsignificant paths render densely dotted so topology stays
-#'   visible). Requires stars in the prep data frame.
-#' @param tier_widths Numeric length-4: line widths in pt for 0/1/2/3 stars.
+#' @param weight_by "none" (default; legacy output), "significance", or
+#'   "coefficient". With "significance", each arrow's line width encodes its
+#'   own significance tier, read from the stars in its formatted coefficient
+#'   (heavy p<.001, medium p<.01, light p<.05). With "coefficient", line
+#'   width scales continuously with the path's absolute standardized estimate
+#'   (parsed from the leading number of the formatted coefficient), so width
+#'   encodes magnitude while dash type still encodes evidence. In both modes
+#'   nonsignificant paths render densely dotted so topology stays visible.
+#'   Requires stars in the prep data frame.
+#' @param tier_widths Numeric length-4: line widths in pt for 0/1/2/3 stars
+#'   (significance mode).
+#' @param coef_widths Numeric length-2: min/max line widths in pt for
+#'   coefficient mode; |estimate| = 0 maps to the min and |estimate| >=
+#'   \code{coef_ref} saturates at the max.
+#' @param coef_ref Reference |estimate| that saturates to the max width in
+#'   coefficient mode. Default NULL uses the largest |estimate| in this
+#'   diagram; pass a common value (e.g., the max across panels) to make
+#'   widths comparable across diagrams.
 #' @return Character string containing TikZ code
 #' @export
 #' @examples
@@ -346,25 +358,51 @@ sem_dual_med_diagram_tikz <- function(data,
                                        m1_color = "blue!70!black",
                                        m2_color = "red!70!black",
                                        bw = FALSE,
-                                       weight_by = c("none", "significance"),
-                                       tier_widths = c(0.3, 0.45, 0.8, 1.25)) {
+                                       weight_by = c("none", "significance", "coefficient"),
+                                       tier_widths = c(0.3, 0.45, 0.8, 1.25),
+                                       coef_widths = c(0.3, 1.25),
+                                       coef_ref = NULL) {
 
   weight_by <- match.arg(weight_by)
   if (bw) m1_color <- m2_color <- "black"
 
-  # Per-path line styles from each path's own significance tier, read from
-  # the stars in its formatted coefficient (n.s. renders densely dotted so
-  # the topology stays visible). tier_widths = pt widths for 0/1/2/3 stars.
+  # Per-path line styles. Significance mode: width from each path's own star
+  # tier (tier_widths = pt widths for 0/1/2/3 stars). Coefficient mode: width
+  # scales with |estimate| parsed from the leading number of the formatted
+  # coefficient (coef_widths = min/max pt; |est| >= coef_ref saturates). In
+  # both modes n.s. paths render densely dotted so the topology stays visible.
   .star_tier <- function(coef_str) {
+    if (is.na(coef_str)) return(NA_integer_)
     m <- regmatches(coef_str, gregexpr("\\$\\^\\{(\\**)\\}\\$", coef_str))[[1]]
     if (!length(m)) return(NA_integer_)
     max(nchar(gsub("[^*]", "", m)))
+  }
+  .coef_est <- function(coef_str) {
+    if (is.na(coef_str)) return(NA_real_)
+    m <- regmatches(coef_str, regexpr("^\\s*-?[0-9]+\\.?[0-9]*", coef_str))
+    if (!length(m)) return(NA_real_)
+    as.numeric(m)
+  }
+  if (weight_by == "coefficient") {
+    stopifnot(length(coef_widths) == 2, coef_widths[1] <= coef_widths[2])
+    .styled_paths <- c(data$coef_a1, data$coef_b1, data$coef_a2, data$coef_b2,
+                       data$coef_ind_m1, data$coef_ind_m2, data$coef_c, data$coef_total)
+    .ests <- vapply(.styled_paths, .coef_est, numeric(1))
+    .ref  <- if (!is.null(coef_ref)) coef_ref else suppressWarnings(max(abs(.ests), na.rm = TRUE))
+    if (!is.finite(.ref) || .ref <= 0) .ref <- 1  # degenerate: all zero/unparseable -> min widths
   }
   .tier_style <- function(coef_str) {
     if (weight_by == "none") return("")
     n <- .star_tier(coef_str)
     if (is.na(n)) return("")
-    sty <- sprintf(", line width=%.3gpt", tier_widths[n + 1])
+    if (weight_by == "coefficient") {
+      est <- .coef_est(coef_str)
+      if (is.na(est)) return("")
+      w <- coef_widths[1] + diff(coef_widths) * min(abs(est) / .ref, 1)
+      sty <- sprintf(", line width=%.3gpt", w)
+    } else {
+      sty <- sprintf(", line width=%.3gpt", tier_widths[n + 1])
+    }
     if (n == 0) sty <- paste0(sty, ", densely dotted")
     sty
   }

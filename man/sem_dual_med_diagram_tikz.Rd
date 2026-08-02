@@ -17,8 +17,10 @@ sem_dual_med_diagram_tikz(
   m1_color = "blue!70!black",
   m2_color = "red!70!black",
   bw = FALSE,
-  weight_by = c("none", "significance"),
-  tier_widths = c(0.3, 0.45, 0.8, 1.25)
+  weight_by = c("none", "significance", "coefficient"),
+  tier_widths = c(0.3, 0.45, 0.8, 1.25),
+  coef_widths = c(0.3, 1.25),
+  coef_ref = NULL
 )
 }
 \arguments{
@@ -48,13 +50,27 @@ sem_dual_med_diagram_tikz(
 colors black), so line weight is the only visual channel -- the
 recommended pairing with \code{weight_by = "significance"}.}
 
-\item{weight_by}{"none" (default; legacy output) or "significance": each
-arrow's line width encodes its own significance tier, read from the
-stars in its formatted coefficient (heavy p<.001, medium p<.01, light
-p<.05; nonsignificant paths render densely dotted so topology stays
-visible). Requires stars in the prep data frame.}
+\item{weight_by}{"none" (default; legacy output), "significance", or
+"coefficient". With "significance", each arrow's line width encodes its
+own significance tier, read from the stars in its formatted coefficient
+(heavy p<.001, medium p<.01, light p<.05). With "coefficient", line
+width scales continuously with the path's absolute standardized estimate
+(parsed from the leading number of the formatted coefficient), so width
+encodes magnitude while dash type still encodes evidence. In both modes
+nonsignificant paths render densely dotted so topology stays visible.
+Requires stars in the prep data frame.}
 
-\item{tier_widths}{Numeric length-4: line widths in pt for 0/1/2/3 stars.}
+\item{tier_widths}{Numeric length-4: line widths in pt for 0/1/2/3 stars
+(significance mode).}
+
+\item{coef_widths}{Numeric length-2: min/max line widths in pt for
+coefficient mode; |estimate| = 0 maps to the min and |estimate| >=
+\code{coef_ref} saturates at the max.}
+
+\item{coef_ref}{Reference |estimate| that saturates to the max width in
+coefficient mode. Default NULL uses the largest |estimate| in this
+diagram; pass a common value (e.g., the max across panels) to make
+widths comparable across diagrams.}
 }
 \value{
 Character string containing TikZ code
