@@ -338,6 +338,9 @@ sem_dual_med_data_prep_df <- function(sem_fit,
 #'   coefficient mode. Default NULL uses the largest |estimate| in this
 #'   diagram; pass a common value (e.g., the max across panels) to make
 #'   widths comparable across diagrams.
+#' @param legend Logical; FALSE suppresses the in-diagram significance
+#'   legend (useful for multi-panel figures where the caption carries the
+#'   star key once). Default TRUE preserves legacy output.
 #' @return Character string containing TikZ code
 #' @export
 #' @examples
@@ -361,7 +364,8 @@ sem_dual_med_diagram_tikz <- function(data,
                                        weight_by = c("none", "significance", "coefficient"),
                                        tier_widths = c(0.3, 0.45, 0.8, 1.25),
                                        coef_widths = c(0.3, 1.25),
-                                       coef_ref = NULL) {
+                                       coef_ref = NULL,
+                                       legend = TRUE) {
 
   weight_by <- match.arg(weight_by)
   if (bw) m1_color <- m2_color <- "black"
@@ -467,6 +471,12 @@ sem_dual_med_diagram_tikz <- function(data,
   }
 
   data$path_labels <- path_labels
+  data$legend_block <- if (legend) {
+"% Legend
+\\node[align=left, anchor=west] at (0, -8) {
+  \\scriptsize $^{*}p < 0.05$; $^{**}p < 0.01$; $^{***}p < 0.001$
+};"
+  } else ""
 
   # Main diagram with curved ACME arrows (like single mediator version)
   glue::glue_data(data,
@@ -489,10 +499,7 @@ sem_dual_med_diagram_tikz <- function(data,
 % Direct effect X -> Y (ADE)
 \\path[->, <<sty_c_lead>>] (x) edge node[above, align=center, yshift=1pt] {ADE: <<coef_c>>} (y);
 \\path[->, <<sty_tot_lead>>] (x) edge node[below, align=center, yshift=-5pt] {Total: <<coef_total>>} (y);
-% Legend
-\\node[align=left, anchor=west] at (0, -8) {
-  \\scriptsize $^{*}p < 0.05$; $^{**}p < 0.01$; $^{***}p < 0.001$
-};
+<<legend_block>>
 % Label
 \\node at (-2, 7) {\\scriptsize <<diag_label>>};
 \\end{tikzpicture}",

@@ -16,6 +16,8 @@
     max |estimate|; pass a shared value for cross-panel comparability), with
     `coef_widths` setting the min/max pt. Width encodes magnitude; dash type
     still encodes evidence (n.s. paths densely dotted).
+  - `legend = FALSE`: suppress the in-diagram significance legend (for
+    multi-panel figures where the caption carries the star key once).
   Recommended pairing: `bw = TRUE` with `weight_by = "coefficient"` (width =
   effect size, dotted = null) or `weight_by = "significance"` (width =
   evidence tier); monochrome arrows make weight the only channel.

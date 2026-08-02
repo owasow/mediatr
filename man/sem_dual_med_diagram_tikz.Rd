@@ -20,7 +20,8 @@ sem_dual_med_diagram_tikz(
   weight_by = c("none", "significance", "coefficient"),
   tier_widths = c(0.3, 0.45, 0.8, 1.25),
   coef_widths = c(0.3, 1.25),
-  coef_ref = NULL
+  coef_ref = NULL,
+  legend = TRUE
 )
 }
 \arguments{
@@ -71,6 +72,10 @@ coefficient mode; |estimate| = 0 maps to the min and |estimate| >=
 coefficient mode. Default NULL uses the largest |estimate| in this
 diagram; pass a common value (e.g., the max across panels) to make
 widths comparable across diagrams.}
+
+\item{legend}{Logical; FALSE suppresses the in-diagram significance
+legend (useful for multi-panel figures where the caption carries the
+star key once). Default TRUE preserves legacy output.}
 }
 \value{
 Character string containing TikZ code
