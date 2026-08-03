@@ -276,7 +276,7 @@ Both templates show the required preamble and how to `\input{}` generated diagra
 
 ## Citation
 
-If you use mediatr in published work, please cite it:
+If you have found mediatr to be helpful with published work, please consider citing it:
 
 > Wasow, Omar (2026). *mediatr: Publication-Ready Mediation Analysis Diagrams.* R package version 0.4.0. https://github.com/owasow/mediatr
 
