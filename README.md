@@ -2,6 +2,10 @@
 
 Publication-ready mediation analysis diagrams and tables for LaTeX documents.
 
+<p align="center">
+  <img src="man/figures/README-dual-color.png" width="55%" alt="Dual-mediator SEM diagram: treatment to outcome through two parallel mediators, with path coefficients, significance stars, and indirect effects on curved arrows">
+</p>
+
 ## Installation
 
 ```r
@@ -60,6 +64,10 @@ tikz_code <- med_diagram_acme_tikz(diagram_data)
 # Write to file for LaTeX \input{}
 writeLines(tikz_code, "mediation_diagram.tex")
 ```
+
+<p align="center">
+  <img src="man/figures/README-single-acme.png" width="55%" alt="Single-mediator diagram from the jobs example: Job Training to Depression via Job Search Self-Efficacy, with a curved ACME arrow">
+</p>
 
 ## Inline Output with cat()
 
@@ -136,6 +144,33 @@ tikz_code <- sem_dual_med_diagram_tikz(diagram_data, show_paths = TRUE)
 cat(tikz_code)
 ```
 
+This produces the two-color diagram shown at the top of this page.
+
+### Arrow weights and black-and-white mode
+
+`sem_dual_med_diagram_tikz()` can encode effect size in the drawing itself:
+arrow width proportional to the path coefficient's magnitude, with paths that
+are not statistically significant rendered as dotted lines. Combined with
+`bw = TRUE` this gives a monochrome figure suited to journals that charge for
+(or discourage) color:
+
+```r
+tikz_code <- sem_dual_med_diagram_tikz(
+    diagram_data,
+    show_paths = TRUE,
+    bw        = TRUE,
+    weight_by = "coefficient"   # or "significance" for star-tier widths
+)
+```
+
+<p align="center">
+  <img src="man/figures/README-dual-weighted-bw.png" width="55%" alt="Monochrome dual-mediator diagram: arrow width proportional to coefficient magnitude, dotted arrows for paths that are not statistically significant">
+</p>
+
+When panels for several models appear side by side, pass a shared `coef_ref`
+(the largest absolute coefficient across all panels) so arrow widths are
+comparable across diagrams.
+
 ## Usage: Serial Mediation SEM (lavaan package)
 
 For serial mediation chains (X → M1 → M2 → Y):
@@ -192,8 +227,9 @@ system.file("examples", package = "mediatr")
 
 - `mediatr_example_article.tex` — article/paper template
 - `mediatr_example_beamer.tex` — Beamer slides template
+- `readme_figures.R` — regenerates the sample diagrams shown on this page
 
-Both show the required preamble and how to `\input{}` generated diagrams.
+Both templates show the required preamble and how to `\input{}` generated diagrams.
 
 ## Functions
 
