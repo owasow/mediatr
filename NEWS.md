@@ -1,3 +1,27 @@
+# mediatr 0.4.0
+
+* The `bw` and `weight_by` display options introduced in 0.3.0 for
+  `sem_dual_med_diagram_tikz()` now cover every diagram function. The
+  star-tier and coefficient-magnitude machinery moved to a shared internal
+  helper (`.tier_style_factory()`), so all functions use identical mapping
+  rules and accept the same `tier_widths` / `coef_widths` / `coef_ref`
+  arguments. Defaults reproduce each function's legacy output byte-for-byte.
+  - `sem_dual_med_diagram_compact_tikz()`: gains `bw` and `weight_by`. In
+    weighted modes the legacy dashed-M2-pathway convention is dropped: dash
+    type then encodes evidence (nonsignificant paths densely dotted), not
+    pathway identity.
+  - `sem_serial_med_diagram_tikz()`: gains `bw` (all three pathway colors)
+    and `weight_by` across all six drawn paths.
+  - `med_diagram_tikz()` and `med_diagram_acme_tikz()`: gain `weight_by`
+    (these diagrams are black and white by design, so no `bw` flag). The
+    curved ACME arrow is weighted by its own magnitude.
+* First testthat suite: weighting behavior and legacy-output stability for
+  all five diagram functions.
+* Citation infrastructure: `inst/CITATION`, `CITATION.cff`, and URL /
+  BugReports fields in DESCRIPTION.
+* README gains a sample-diagram gallery (`man/figures/`, regenerable via
+  `inst/examples/readme_figures.R`).
+
 # mediatr 0.3.0
 
 * `sem_dual_med_diagram_tikz()` gains two display options, developed on the

@@ -17,7 +17,11 @@ med_diagram_tikz(
   bshift = "+5pt",
   cshift = "-5pt",
   caption = "",
-  label = ""
+  label = "",
+  weight_by = c("none", "significance", "coefficient"),
+  tier_widths = c(0.3, 0.45, 0.8, 1.25),
+  coef_widths = c(0.3, 1.25),
+  coef_ref = NULL
 )
 }
 \arguments{
@@ -46,6 +50,20 @@ med_diagram_tikz(
 \item{caption}{Figure caption (currently commented out in output)}
 
 \item{label}{LaTeX label (currently commented out in output)}
+
+\item{weight_by}{Arrow-weight mode: "none" (legacy, uniform), "significance"
+(width from each path's star tier), or "coefficient" (width proportional
+to |estimate|). In both weighted modes paths that are not statistically
+significant render densely dotted. These diagrams are black and white by
+design, so there is no bw flag}
+
+\item{tier_widths}{Line widths in pt for 0/1/2/3 stars ("significance" mode)}
+
+\item{coef_widths}{Min/max line width in pt ("coefficient" mode)}
+
+\item{coef_ref}{Reference |coefficient| that saturates coef_widths[2]; set
+a shared value across panels to make arrow widths comparable (default:
+largest |estimate| in this diagram)}
 }
 \value{
 Character string containing TikZ code

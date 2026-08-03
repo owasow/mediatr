@@ -242,6 +242,16 @@ med_data_prep_df <- function(med_out,
 #' @param cshift Y-shift for bottom arrow label
 #' @param caption Figure caption (currently commented out in output)
 #' @param label LaTeX label (currently commented out in output)
+#' @param weight_by Arrow-weight mode: "none" (legacy, uniform), "significance"
+#'   (width from each path's star tier), or "coefficient" (width proportional
+#'   to |estimate|). In both weighted modes paths that are not statistically
+#'   significant render densely dotted. These diagrams are black and white by
+#'   design, so there is no bw flag
+#' @param tier_widths Line widths in pt for 0/1/2/3 stars ("significance" mode)
+#' @param coef_widths Min/max line width in pt ("coefficient" mode)
+#' @param coef_ref Reference |coefficient| that saturates coef_widths[2]; set
+#'   a shared value across panels to make arrow widths comparable (default:
+#'   largest |estimate| in this diagram)
 #' @return Character string containing TikZ code
 #' @export
 med_diagram_tikz <- function(data,
@@ -256,7 +266,19 @@ med_diagram_tikz <- function(data,
                              bshift = "+5pt",
                              cshift = "-5pt",
                              caption = "",
-                             label = "") {
+                             label = "",
+                             weight_by = c("none", "significance", "coefficient"),
+                             tier_widths = c(0.3, 0.45, 0.8, 1.25),
+                             coef_widths = c(0.3, 1.25),
+                             coef_ref = NULL) {
+
+  weight_by <- match.arg(weight_by)
+  .tier_style <- .tier_style_factory(
+    weight_by,
+    styled_coefs = c(data$coef_xm, data$coef_my, data$coef_xy, data$coef_tot),
+    tier_widths = tier_widths,
+    coef_widths = coef_widths,
+    coef_ref    = coef_ref)
 
   # Set defaults based on mode
   if (mode == "article") {
@@ -285,6 +307,10 @@ med_diagram_tikz <- function(data,
   data$ashift     <- ashift
   data$bshift     <- bshift
   data$cshift     <- cshift
+  data$sty_xy  <- .tier_style(data$coef_xy)
+  data$sty_xm  <- .tier_style(data$coef_xm)
+  data$sty_my  <- .tier_style(data$coef_my)
+  data$sty_tot <- .tier_style(data$coef_tot)
 
   glue::glue_data(data,
 "\\begin{tikzpicture}[scale=<<scale>>, >=stealth, font=\\sffamily]
@@ -294,10 +320,10 @@ med_diagram_tikz <- function(data,
 \\node[mynode] (x) at (1,0) {<<lab_x>>};
 \\node[mynode] (y) at (7,0) {<<lab_y>>};
 \\node[mynode] (m) at (4,3) {<<lab_m>>};
-\\path[->] (x) edge node[above] {<<coef_xy>>} (y);
-\\path[->] (x) edge node[left,  xshift=<<ashift>>] {<<coef_xm>>} (m);
-\\path[->] (m) edge node[right, xshift=<<bshift>>] {<<coef_my>>} (y);
-\\path[->] (x) edge node[below, yshift=<<cshift>>] {Total: <<coef_tot>>} (y);
+\\path[-><<sty_xy>>] (x) edge node[above] {<<coef_xy>>} (y);
+\\path[-><<sty_xm>>] (x) edge node[left,  xshift=<<ashift>>] {<<coef_xm>>} (m);
+\\path[-><<sty_my>>] (m) edge node[right, xshift=<<bshift>>] {<<coef_my>>} (y);
+\\path[-><<sty_tot>>] (x) edge node[below, yshift=<<cshift>>] {Total: <<coef_tot>>} (y);
 \\node at (0, 3.5) {\\scriptsize <<diag_label>>};
 \\end{tikzpicture}
 ",
@@ -322,6 +348,17 @@ med_diagram_tikz <- function(data,
 #' @param diag_label Optional label in top-left corner
 #' @param ashift X-shift for left arrow label
 #' @param bshift X-shift for right arrow label
+#' @param weight_by Arrow-weight mode: "none" (legacy, uniform), "significance"
+#'   (width from each path's star tier), or "coefficient" (width proportional
+#'   to |estimate|). Applies to all five arrows including the curved ACME
+#'   arrow, which is weighted by its own magnitude. In both weighted modes
+#'   paths that are not statistically significant render densely dotted.
+#'   These diagrams are black and white by design, so there is no bw flag
+#' @param tier_widths Line widths in pt for 0/1/2/3 stars ("significance" mode)
+#' @param coef_widths Min/max line width in pt ("coefficient" mode)
+#' @param coef_ref Reference |coefficient| that saturates coef_widths[2]; set
+#'   a shared value across panels to make arrow widths comparable (default:
+#'   largest |estimate| in this diagram)
 #' @return Character string containing TikZ code
 #' @export
 #' @examples
@@ -339,7 +376,20 @@ med_diagram_acme_tikz <- function(data,
                                   text_size = NULL,
                                   diag_label = "",
                                   ashift = NULL,
-                                  bshift = NULL) {
+                                  bshift = NULL,
+                                  weight_by = c("none", "significance", "coefficient"),
+                                  tier_widths = c(0.3, 0.45, 0.8, 1.25),
+                                  coef_widths = c(0.3, 1.25),
+                                  coef_ref = NULL) {
+
+  weight_by <- match.arg(weight_by)
+  .tier_style <- .tier_style_factory(
+    weight_by,
+    styled_coefs = c(data$coef_xm, data$coef_my, data$coef_xy,
+                     data$coef_tot, data$coef_xmy),
+    tier_widths = tier_widths,
+    coef_widths = coef_widths,
+    coef_ref    = coef_ref)
 
   # Encode labels for LaTeX
   data$lab_x <- latexify(data$lab_x)
@@ -380,6 +430,11 @@ med_diagram_acme_tikz <- function(data,
   }
 
   data$diag_label <- diag_label
+  data$sty_xy  <- .tier_style(data$coef_xy)
+  data$sty_xm  <- .tier_style(data$coef_xm)
+  data$sty_my  <- .tier_style(data$coef_my)
+  data$sty_tot <- .tier_style(data$coef_tot)
+  data$sty_xmy <- .tier_style(data$coef_xmy)
 
   paste0(if (nchar(fig_begin) > 0) paste0(fig_begin, "\n") else "",
          glue::glue_data(data,
@@ -390,11 +445,11 @@ med_diagram_acme_tikz <- function(data,
 \\node[mynode] (x) at (0,0)  {<<lab_x>>};
 \\node[mynode] (y) at (12,0) {<<lab_y>>};
 \\node[mynode] (m) at (6,6)  {<<lab_m>>};
-\\path[->] (x) edge node[above, align=center, yshift=1pt] {ADE: <<coef_xy>> } (y);
-\\path[->] (x) edge node[left, align=center, xshift=<<ashift>>] {<<coef_xm>>} (m);
-\\path[->] (m) edge node[right, align=center, xshift=<<bshift>>] {<<coef_my>>} (y);
-\\path[->] (x) edge node[below, align=center, yshift=-5pt] {Total: <<coef_tot>>} (y);
-\\draw[->] (x.north east) to[out=25, in=155, looseness=1.05] node[midway, above, align=center, yshift=1pt] {ACME: <<coef_xmy>>} (y.north west);
+\\path[-><<sty_xy>>] (x) edge node[above, align=center, yshift=1pt] {ADE: <<coef_xy>> } (y);
+\\path[-><<sty_xm>>] (x) edge node[left, align=center, xshift=<<ashift>>] {<<coef_xm>>} (m);
+\\path[-><<sty_my>>] (m) edge node[right, align=center, xshift=<<bshift>>] {<<coef_my>>} (y);
+\\path[-><<sty_tot>>] (x) edge node[below, align=center, yshift=-5pt] {Total: <<coef_tot>>} (y);
+\\draw[-><<sty_xmy>>] (x.north east) to[out=25, in=155, looseness=1.05] node[midway, above, align=center, yshift=1pt] {ACME: <<coef_xmy>>} (y.north west);
 \\node at (-1.5, 6.5) {\\scriptsize <<diag_label>>};
 \\end{tikzpicture}",
                          .open = "<<", .close = ">>"

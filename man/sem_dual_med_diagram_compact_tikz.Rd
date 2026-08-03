@@ -14,7 +14,12 @@ sem_dual_med_diagram_compact_tikz(
   text_size = NULL,
   diag_label = "",
   m1_color = "blue!70!black",
-  m2_color = "red!70!black"
+  m2_color = "red!70!black",
+  bw = FALSE,
+  weight_by = c("none", "significance", "coefficient"),
+  tier_widths = c(0.3, 0.45, 0.8, 1.25),
+  coef_widths = c(0.3, 1.25),
+  coef_ref = NULL
 )
 }
 \arguments{
@@ -37,6 +42,23 @@ sem_dual_med_diagram_compact_tikz(
 \item{m1_color}{Color for M1 pathway (default: "blue!70!black")}
 
 \item{m2_color}{Color for M2 pathway (default: "red!70!black")}
+
+\item{bw}{Logical: render in black and white? Sets both pathway colors to
+black (default: FALSE)}
+
+\item{weight_by}{Arrow-weight mode: "none" (legacy, uniform), "significance"
+(width from each path's star tier), or "coefficient" (width proportional
+to |estimate|). In both weighted modes the legacy dashed-M2 convention is
+dropped and paths that are not statistically significant render densely
+dotted instead}
+
+\item{tier_widths}{Line widths in pt for 0/1/2/3 stars ("significance" mode)}
+
+\item{coef_widths}{Min/max line width in pt ("coefficient" mode)}
+
+\item{coef_ref}{Reference |coefficient| that saturates coef_widths[2]; set
+a shared value across panels to make arrow widths comparable (default:
+largest |estimate| in this diagram)}
 }
 \value{
 Character string containing TikZ code

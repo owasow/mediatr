@@ -148,11 +148,13 @@ This produces the two-color diagram shown at the top of this page.
 
 ### Arrow weights and black-and-white mode
 
-`sem_dual_med_diagram_tikz()` can encode effect size in the drawing itself:
-arrow width proportional to the path coefficient's magnitude, with paths that
-are not statistically significant rendered as dotted lines. Combined with
-`bw = TRUE` this gives a monochrome figure suited to journals that charge for
-(or discourage) color:
+Every diagram function can encode effect size in the drawing itself: arrow
+width proportional to the path coefficient's magnitude (`weight_by =
+"coefficient"`) or to its significance tier (`weight_by = "significance"`),
+with paths that are not statistically significant rendered as dotted lines.
+The colored diagrams also take `bw = TRUE` for a monochrome figure suited to
+journals that charge for (or discourage) color; the single-mediator diagrams
+are already black and white:
 
 ```r
 tikz_code <- sem_dual_med_diagram_tikz(
@@ -276,7 +278,7 @@ Both templates show the required preamble and how to `\input{}` generated diagra
 
 If you use mediatr in published work, please cite it:
 
-> Wasow, Omar (2026). *mediatr: Publication-Ready Mediation Analysis Diagrams.* R package version 0.3.0. https://github.com/owasow/mediatr
+> Wasow, Omar (2026). *mediatr: Publication-Ready Mediation Analysis Diagrams.* R package version 0.4.0. https://github.com/owasow/mediatr
 
 BibTeX (also available in R via `citation("mediatr")`):
 
@@ -285,7 +287,7 @@ BibTeX (also available in R via `citation("mediatr")`):
   title  = {mediatr: Publication-Ready Mediation Analysis Diagrams},
   author = {Omar Wasow},
   year   = {2026},
-  note   = {R package version 0.3.0},
+  note   = {R package version 0.4.0},
   url    = {https://github.com/owasow/mediatr},
 }
 ```

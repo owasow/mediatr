@@ -14,7 +14,11 @@ med_diagram_acme_tikz(
   text_size = NULL,
   diag_label = "",
   ashift = NULL,
-  bshift = NULL
+  bshift = NULL,
+  weight_by = c("none", "significance", "coefficient"),
+  tier_widths = c(0.3, 0.45, 0.8, 1.25),
+  coef_widths = c(0.3, 1.25),
+  coef_ref = NULL
 )
 }
 \arguments{
@@ -37,6 +41,21 @@ med_diagram_acme_tikz(
 \item{ashift}{X-shift for left arrow label}
 
 \item{bshift}{X-shift for right arrow label}
+
+\item{weight_by}{Arrow-weight mode: "none" (legacy, uniform), "significance"
+(width from each path's star tier), or "coefficient" (width proportional
+to |estimate|). Applies to all five arrows including the curved ACME
+arrow, which is weighted by its own magnitude. In both weighted modes
+paths that are not statistically significant render densely dotted.
+These diagrams are black and white by design, so there is no bw flag}
+
+\item{tier_widths}{Line widths in pt for 0/1/2/3 stars ("significance" mode)}
+
+\item{coef_widths}{Min/max line width in pt ("coefficient" mode)}
+
+\item{coef_ref}{Reference |coefficient| that saturates coef_widths[2]; set
+a shared value across panels to make arrow widths comparable (default:
+largest |estimate| in this diagram)}
 }
 \value{
 Character string containing TikZ code

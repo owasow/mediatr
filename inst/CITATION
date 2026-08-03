@@ -5,6 +5,6 @@ bibentry(
   title   = "{mediatr}: Publication-Ready Mediation Analysis Diagrams",
   author  = person("Omar", "Wasow"),
   year    = "2026",
-  note    = "R package version 0.3.0",
+  note    = "R package version 0.4.0",
   url     = "https://github.com/owasow/mediatr"
 )

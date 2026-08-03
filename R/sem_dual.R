@@ -370,46 +370,15 @@ sem_dual_med_diagram_tikz <- function(data,
   weight_by <- match.arg(weight_by)
   if (bw) m1_color <- m2_color <- "black"
 
-  # Per-path line styles. Significance mode: width from each path's own star
-  # tier (tier_widths = pt widths for 0/1/2/3 stars). Coefficient mode: width
-  # scales with |estimate| parsed from the leading number of the formatted
-  # coefficient (coef_widths = min/max pt; |est| >= coef_ref saturates). In
-  # both modes n.s. paths render densely dotted so the topology stays visible.
-  .star_tier <- function(coef_str) {
-    if (is.na(coef_str)) return(NA_integer_)
-    m <- regmatches(coef_str, gregexpr("\\$\\^\\{(\\**)\\}\\$", coef_str))[[1]]
-    if (!length(m)) return(NA_integer_)
-    max(nchar(gsub("[^*]", "", m)))
-  }
-  .coef_est <- function(coef_str) {
-    if (is.na(coef_str)) return(NA_real_)
-    m <- regmatches(coef_str, regexpr("^\\s*-?[0-9]+\\.?[0-9]*", coef_str))
-    if (!length(m)) return(NA_real_)
-    as.numeric(m)
-  }
-  if (weight_by == "coefficient") {
-    stopifnot(length(coef_widths) == 2, coef_widths[1] <= coef_widths[2])
-    .styled_paths <- c(data$coef_a1, data$coef_b1, data$coef_a2, data$coef_b2,
-                       data$coef_ind_m1, data$coef_ind_m2, data$coef_c, data$coef_total)
-    .ests <- vapply(.styled_paths, .coef_est, numeric(1))
-    .ref  <- if (!is.null(coef_ref)) coef_ref else suppressWarnings(max(abs(.ests), na.rm = TRUE))
-    if (!is.finite(.ref) || .ref <= 0) .ref <- 1  # degenerate: all zero/unparseable -> min widths
-  }
-  .tier_style <- function(coef_str) {
-    if (weight_by == "none") return("")
-    n <- .star_tier(coef_str)
-    if (is.na(n)) return("")
-    if (weight_by == "coefficient") {
-      est <- .coef_est(coef_str)
-      if (is.na(est)) return("")
-      w <- coef_widths[1] + diff(coef_widths) * min(abs(est) / .ref, 1)
-      sty <- sprintf(", line width=%.3gpt", w)
-    } else {
-      sty <- sprintf(", line width=%.3gpt", tier_widths[n + 1])
-    }
-    if (n == 0) sty <- paste0(sty, ", densely dotted")
-    sty
-  }
+  # Per-path line styles; mapping logic lives in .tier_style_factory (utils.R)
+  # and is shared by every *_diagram_tikz() function.
+  .tier_style <- .tier_style_factory(
+    weight_by,
+    styled_coefs = c(data$coef_a1, data$coef_b1, data$coef_a2, data$coef_b2,
+                     data$coef_ind_m1, data$coef_ind_m2, data$coef_c, data$coef_total),
+    tier_widths = tier_widths,
+    coef_widths = coef_widths,
+    coef_ref    = coef_ref)
 
   # Encode labels for LaTeX
   data$lab_x <- latexify(data$lab_x)
@@ -524,6 +493,18 @@ sem_dual_med_diagram_tikz <- function(data,
 #' @param diag_label Optional label in top-left corner
 #' @param m1_color Color for M1 pathway (default: "blue!70!black")
 #' @param m2_color Color for M2 pathway (default: "red!70!black")
+#' @param bw Logical: render in black and white? Sets both pathway colors to
+#'   black (default: FALSE)
+#' @param weight_by Arrow-weight mode: "none" (legacy, uniform), "significance"
+#'   (width from each path's star tier), or "coefficient" (width proportional
+#'   to |estimate|). In both weighted modes the legacy dashed-M2 convention is
+#'   dropped and paths that are not statistically significant render densely
+#'   dotted instead
+#' @param tier_widths Line widths in pt for 0/1/2/3 stars ("significance" mode)
+#' @param coef_widths Min/max line width in pt ("coefficient" mode)
+#' @param coef_ref Reference |coefficient| that saturates coef_widths[2]; set
+#'   a shared value across panels to make arrow widths comparable (default:
+#'   largest |estimate| in this diagram)
 #' @return Character string containing TikZ code
 #' @export
 sem_dual_med_diagram_compact_tikz <- function(data,
@@ -535,7 +516,23 @@ sem_dual_med_diagram_compact_tikz <- function(data,
                                                text_size = NULL,
                                                diag_label = "",
                                                m1_color = "blue!70!black",
-                                               m2_color = "red!70!black") {
+                                               m2_color = "red!70!black",
+                                               bw = FALSE,
+                                               weight_by = c("none", "significance", "coefficient"),
+                                               tier_widths = c(0.3, 0.45, 0.8, 1.25),
+                                               coef_widths = c(0.3, 1.25),
+                                               coef_ref = NULL) {
+
+  weight_by <- match.arg(weight_by)
+  if (bw) m1_color <- m2_color <- "black"
+
+  .tier_style <- .tier_style_factory(
+    weight_by,
+    styled_coefs = c(data$coef_a1, data$coef_b1, data$coef_a2, data$coef_b2,
+                     data$coef_c),
+    tier_widths = tier_widths,
+    coef_widths = coef_widths,
+    coef_ref    = coef_ref)
 
   # Encode labels for LaTeX
   data$lab_x <- latexify(data$lab_x)
@@ -561,6 +558,16 @@ sem_dual_med_diagram_compact_tikz <- function(data,
   data$diag_label <- diag_label
   data$m1_color <- m1_color
   data$m2_color <- m2_color
+  # Legacy look (weight_by = "none"): uniform thick lines, M2 pathway dashed.
+  # Weighted modes drop both -- width then encodes tier/magnitude and dash is
+  # reserved for statistical non-significance (densely dotted).
+  data$uniform_thick <- if (weight_by == "none") ", thick" else ""
+  data$legacy_dashed <- if (weight_by == "none") ", dashed" else ""
+  data$sty_a1 <- .tier_style(data$coef_a1)
+  data$sty_b1 <- .tier_style(data$coef_b1)
+  data$sty_a2 <- .tier_style(data$coef_a2)
+  data$sty_b2 <- .tier_style(data$coef_b2)
+  data$sty_c  <- .tier_style(data$coef_c)
 
   glue::glue_data(data,
 "\\begin{tikzpicture}[scale=<<scale>>, >=stealth, font=\\sffamily]
@@ -573,15 +580,15 @@ sem_dual_med_diagram_compact_tikz <- function(data,
 \\node[mynode, fill=<<m1_color>>!10] (m1) at (4, 5)   {<<lab_m1>>};
 \\node[mynode, fill=<<m2_color>>!10] (m2) at (8, 5)   {<<lab_m2>>};
 % M1 pathway (solid, colored)
-\\path[->, <<m1_color>>, thick] (x) edge node[left, align=center] {<<coef_a1>>} (m1);
-\\path[->, <<m1_color>>, thick] (m1) edge node[left, align=center] {<<coef_b1>>} (y);
+\\path[->, <<m1_color>><<uniform_thick>><<sty_a1>>] (x) edge node[left, align=center] {<<coef_a1>>} (m1);
+\\path[->, <<m1_color>><<uniform_thick>><<sty_b1>>] (m1) edge node[left, align=center] {<<coef_b1>>} (y);
 % M2 pathway (dashed, colored)
-\\path[->, <<m2_color>>, thick, dashed] (x) edge node[right, align=center, xshift=2pt] {<<coef_a2>>} (m2);
-\\path[->, <<m2_color>>, thick, dashed] (m2) edge node[right, align=center, xshift=2pt] {<<coef_b2>>} (y);
+\\path[->, <<m2_color>><<uniform_thick>><<legacy_dashed>><<sty_a2>>] (x) edge node[right, align=center, xshift=2pt] {<<coef_a2>>} (m2);
+\\path[->, <<m2_color>><<uniform_thick>><<legacy_dashed>><<sty_b2>>] (m2) edge node[right, align=center, xshift=2pt] {<<coef_b2>>} (y);
 % Mediator correlation (if applicable)
 \\path[<->, gray, dotted] (m1) edge (m2);
 % Direct effect X -> Y
-\\path[->] (x) edge node[above, align=center] {Direct: <<coef_c>>} (y);
+\\path[-><<sty_c>>] (x) edge node[above, align=center] {Direct: <<coef_c>>} (y);
 % Indirect effect annotations
 \\node[<<m1_color>>, align=center] at (2, 7) {ACME$_1$: <<coef_ind_m1>>};
 \\node[<<m2_color>>, align=center] at (10, 7) {ACME$_2$: <<coef_ind_m2>>};
@@ -744,6 +751,17 @@ sem_serial_med_data_prep_df <- function(sem_fit,
 #' @param m1_color Color for M1 pathway (default: "blue!70!black")
 #' @param m2_color Color for M2 pathway (default: "red!70!black")
 #' @param serial_color Color for serial pathway (default: "purple!70!black")
+#' @param bw Logical: render in black and white? Sets all three pathway
+#'   colors to black (default: FALSE)
+#' @param weight_by Arrow-weight mode: "none" (legacy, uniform), "significance"
+#'   (width from each path's star tier), or "coefficient" (width proportional
+#'   to |estimate|). In both weighted modes paths that are not statistically
+#'   significant render densely dotted
+#' @param tier_widths Line widths in pt for 0/1/2/3 stars ("significance" mode)
+#' @param coef_widths Min/max line width in pt ("coefficient" mode)
+#' @param coef_ref Reference |coefficient| that saturates coef_widths[2]; set
+#'   a shared value across panels to make arrow widths comparable (default:
+#'   largest |estimate| among this diagram's six drawn paths)
 #' @return Character string containing TikZ code
 #' @export
 sem_serial_med_diagram_tikz <- function(data,
@@ -756,7 +774,26 @@ sem_serial_med_diagram_tikz <- function(data,
                                          diag_label = "",
                                          m1_color = "blue!70!black",
                                          m2_color = "red!70!black",
-                                         serial_color = "purple!70!black") {
+                                         serial_color = "purple!70!black",
+                                         bw = FALSE,
+                                         weight_by = c("none", "significance", "coefficient"),
+                                         tier_widths = c(0.3, 0.45, 0.8, 1.25),
+                                         coef_widths = c(0.3, 1.25),
+                                         coef_ref = NULL) {
+
+  weight_by <- match.arg(weight_by)
+  if (bw) m1_color <- m2_color <- serial_color <- "black"
+
+  # Six drawn arrows; note the display/label crosswalk: the M1->M2 arrow
+  # carries coef_a2 (shown as d21) and the X->M2 arrow carries coef_d1
+  # (shown as a2).
+  .tier_style <- .tier_style_factory(
+    weight_by,
+    styled_coefs = c(data$coef_a1, data$coef_a2, data$coef_d1,
+                     data$coef_b1, data$coef_b2, data$coef_c),
+    tier_widths = tier_widths,
+    coef_widths = coef_widths,
+    coef_ref    = coef_ref)
 
   # Encode labels for LaTeX
   data$lab_x <- latexify(data$lab_x)
@@ -783,6 +820,12 @@ sem_serial_med_diagram_tikz <- function(data,
   data$m1_color <- m1_color
   data$m2_color <- m2_color
   data$serial_color <- serial_color
+  data$sty_a1  <- .tier_style(data$coef_a1)
+  data$sty_d21 <- .tier_style(data$coef_a2)
+  data$sty_a2  <- .tier_style(data$coef_d1)
+  data$sty_b1  <- .tier_style(data$coef_b1)
+  data$sty_b2  <- .tier_style(data$coef_b2)
+  data$sty_c   <- .tier_style(data$coef_c)
 
   # Serial mediation diagram following standard layout:
   # X bottom-left, Y bottom-right, M1 top-center-left, M2 top-center-right
@@ -815,17 +858,17 @@ sem_serial_med_diagram_tikz <- function(data,
 \\node[mynode] (m1) at (6, 8)     {<<lab_m1>>};
 \\node[mynode] (m2) at (18, 8)    {<<lab_m2>>};
 % a1: X -> M1 (diagonal)
-\\path[->, <<m1_color>>] (x.north) edge (m1.south west);
+\\path[->, <<m1_color>><<sty_a1>>] (x.north) edge (m1.south west);
 % d21: M1 -> M2 (horizontal, east to west)
-\\path[->, <<serial_color>>] (m1.east) edge node[above, align=center] {$d_{21}$: <<coef_a2>>} (m2.west);
+\\path[->, <<serial_color>><<sty_d21>>] (m1.east) edge node[above, align=center] {$d_{21}$: <<coef_a2>>} (m2.west);
 % a2: X -> M2 (diagonal, crosses b1) - Hayes notation: a2 is X's direct effect on M2
-\\path[->, <<m2_color>>] (x.north east) edge (m2.south west);
+\\path[->, <<m2_color>><<sty_a2>>] (x.north east) edge (m2.south west);
 % b1: M1 -> Y (diagonal, crosses a2)
-\\path[->, <<m1_color>>] (m1.south east) edge (y.north west);
+\\path[->, <<m1_color>><<sty_b1>>] (m1.south east) edge (y.north west);
 % b2: M2 -> Y (diagonal)
-\\path[->, <<m2_color>>] (m2.south east) edge (y.north);
+\\path[->, <<m2_color>><<sty_b2>>] (m2.south east) edge (y.north);
 % c': X -> Y (horizontal, east to west)
-\\path[->] (x.east) edge node[below, align=center, yshift=-5pt] {$c'$: <<coef_c>>} (y.west);
+\\path[-><<sty_c>>] (x.east) edge node[below, align=center, yshift=-5pt] {$c'$: <<coef_c>>} (y.west);
 % Coefficient labels: all at y=5, positioned to avoid line intersections
 % a1 left of its edge, a2 and b1 between crossing lines, b2 right of its edge
 \\node[<<m1_color>>, align=center, anchor=east] at (<<x_a1>>, 5) {$a_1$: <<coef_a1>>};
