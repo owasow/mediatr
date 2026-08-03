@@ -272,6 +272,24 @@ Both templates show the required preamble and how to `\input{}` generated diagra
 | `starify()` | Convert p-values to significance stars |
 | `latexify()` | Escape special characters for LaTeX |
 
+## Citation
+
+If you use mediatr in published work, please cite it:
+
+> Wasow, Omar (2026). *mediatr: Publication-Ready Mediation Analysis Diagrams.* R package version 0.3.0. https://github.com/owasow/mediatr
+
+BibTeX (also available in R via `citation("mediatr")`):
+
+```bibtex
+@Manual{mediatr,
+  title  = {mediatr: Publication-Ready Mediation Analysis Diagrams},
+  author = {Omar Wasow},
+  year   = {2026},
+  note   = {R package version 0.3.0},
+  url    = {https://github.com/owasow/mediatr},
+}
+```
+
 ## License
 
 MIT

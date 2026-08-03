@@ -1,0 +1,10 @@
+citHeader("To cite mediatr in publications, please use:")
+
+bibentry(
+  bibtype = "Manual",
+  title   = "{mediatr}: Publication-Ready Mediation Analysis Diagrams",
+  author  = person("Omar", "Wasow"),
+  year    = "2026",
+  note    = "R package version 0.3.0",
+  url     = "https://github.com/owasow/mediatr"
+)
