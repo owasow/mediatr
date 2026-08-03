@@ -317,6 +317,30 @@ sem_dual_med_data_prep_df <- function(sem_fit,
 #' @param show_paths Logical: show individual a/b path coefficients? (default: FALSE)
 #' @param m1_color Color for M1 pathway (default: "blue!70!black")
 #' @param m2_color Color for M2 pathway (default: "red!70!black")
+#' @param bw Logical; TRUE renders the diagram monochrome (both pathway
+#'   colors black), so line weight is the only visual channel -- the
+#'   recommended pairing with \code{weight_by = "significance"}.
+#' @param weight_by "none" (default; legacy output), "significance", or
+#'   "coefficient". With "significance", each arrow's line width encodes its
+#'   own significance tier, read from the stars in its formatted coefficient
+#'   (heavy p<.001, medium p<.01, light p<.05). With "coefficient", line
+#'   width scales continuously with the path's absolute standardized estimate
+#'   (parsed from the leading number of the formatted coefficient), so width
+#'   encodes magnitude while dash type still encodes evidence. In both modes
+#'   nonsignificant paths render densely dotted so topology stays visible.
+#'   Requires stars in the prep data frame.
+#' @param tier_widths Numeric length-4: line widths in pt for 0/1/2/3 stars
+#'   (significance mode).
+#' @param coef_widths Numeric length-2: min/max line widths in pt for
+#'   coefficient mode; |estimate| = 0 maps to the min and |estimate| >=
+#'   \code{coef_ref} saturates at the max.
+#' @param coef_ref Reference |estimate| that saturates to the max width in
+#'   coefficient mode. Default NULL uses the largest |estimate| in this
+#'   diagram; pass a common value (e.g., the max across panels) to make
+#'   widths comparable across diagrams.
+#' @param legend Logical; FALSE suppresses the in-diagram significance
+#'   legend (useful for multi-panel figures where the caption carries the
+#'   star key once). Default TRUE preserves legacy output.
 #' @return Character string containing TikZ code
 #' @export
 #' @examples
@@ -335,7 +359,57 @@ sem_dual_med_diagram_tikz <- function(data,
                                        diag_label = "",
                                        show_paths = FALSE,
                                        m1_color = "blue!70!black",
-                                       m2_color = "red!70!black") {
+                                       m2_color = "red!70!black",
+                                       bw = FALSE,
+                                       weight_by = c("none", "significance", "coefficient"),
+                                       tier_widths = c(0.3, 0.45, 0.8, 1.25),
+                                       coef_widths = c(0.3, 1.25),
+                                       coef_ref = NULL,
+                                       legend = TRUE) {
+
+  weight_by <- match.arg(weight_by)
+  if (bw) m1_color <- m2_color <- "black"
+
+  # Per-path line styles. Significance mode: width from each path's own star
+  # tier (tier_widths = pt widths for 0/1/2/3 stars). Coefficient mode: width
+  # scales with |estimate| parsed from the leading number of the formatted
+  # coefficient (coef_widths = min/max pt; |est| >= coef_ref saturates). In
+  # both modes n.s. paths render densely dotted so the topology stays visible.
+  .star_tier <- function(coef_str) {
+    if (is.na(coef_str)) return(NA_integer_)
+    m <- regmatches(coef_str, gregexpr("\\$\\^\\{(\\**)\\}\\$", coef_str))[[1]]
+    if (!length(m)) return(NA_integer_)
+    max(nchar(gsub("[^*]", "", m)))
+  }
+  .coef_est <- function(coef_str) {
+    if (is.na(coef_str)) return(NA_real_)
+    m <- regmatches(coef_str, regexpr("^\\s*-?[0-9]+\\.?[0-9]*", coef_str))
+    if (!length(m)) return(NA_real_)
+    as.numeric(m)
+  }
+  if (weight_by == "coefficient") {
+    stopifnot(length(coef_widths) == 2, coef_widths[1] <= coef_widths[2])
+    .styled_paths <- c(data$coef_a1, data$coef_b1, data$coef_a2, data$coef_b2,
+                       data$coef_ind_m1, data$coef_ind_m2, data$coef_c, data$coef_total)
+    .ests <- vapply(.styled_paths, .coef_est, numeric(1))
+    .ref  <- if (!is.null(coef_ref)) coef_ref else suppressWarnings(max(abs(.ests), na.rm = TRUE))
+    if (!is.finite(.ref) || .ref <= 0) .ref <- 1  # degenerate: all zero/unparseable -> min widths
+  }
+  .tier_style <- function(coef_str) {
+    if (weight_by == "none") return("")
+    n <- .star_tier(coef_str)
+    if (is.na(n)) return("")
+    if (weight_by == "coefficient") {
+      est <- .coef_est(coef_str)
+      if (is.na(est)) return("")
+      w <- coef_widths[1] + diff(coef_widths) * min(abs(est) / .ref, 1)
+      sty <- sprintf(", line width=%.3gpt", w)
+    } else {
+      sty <- sprintf(", line width=%.3gpt", tier_widths[n + 1])
+    }
+    if (n == 0) sty <- paste0(sty, ", densely dotted")
+    sty
+  }
 
   # Encode labels for LaTeX
   data$lab_x <- latexify(data$lab_x)
@@ -367,27 +441,42 @@ sem_dual_med_diagram_tikz <- function(data,
   data$diag_label <- diag_label
   data$m1_color <- m1_color
   data$m2_color <- m2_color
+  data$sty_a1  <- .tier_style(data$coef_a1)
+  data$sty_b1  <- .tier_style(data$coef_b1)
+  data$sty_a2  <- .tier_style(data$coef_a2)
+  data$sty_b2  <- .tier_style(data$coef_b2)
+  data$sty_i1  <- .tier_style(data$coef_ind_m1)
+  data$sty_i2  <- .tier_style(data$coef_ind_m2)
+  data$acme_thick <- if (weight_by == "none") ", thick" else ""
+  data$sty_c_lead   <- sub("^, ", "", .tier_style(data$coef_c))
+  data$sty_tot_lead <- sub("^, ", "", .tier_style(data$coef_total))
 
   # Path labels (optional - show a/b coefficients on arrows)
   if (show_paths) {
     path_labels <- glue::glue_data(data,
-"\\path[->, <<m1_color>>] (x) edge node[above left, align=center, xshift=-3pt] {\\textcolor{gray}{<<coef_a1>>}} (m1);
-\\path[->, <<m1_color>>] (m1) edge node[above right, align=center, xshift=3pt] {\\textcolor{gray}{<<coef_b1>>}} (y);
-\\path[->, <<m2_color>>] (x) edge node[below left, align=center, xshift=-3pt] {\\textcolor{gray}{<<coef_a2>>}} (m2);
-\\path[->, <<m2_color>>] (m2) edge node[below right, align=center, xshift=3pt] {\\textcolor{gray}{<<coef_b2>>}} (y);",
+"\\path[->, <<m1_color>><<sty_a1>>] (x) edge node[above left, align=center, xshift=-3pt] {\\textcolor{gray}{<<coef_a1>>}} (m1);
+\\path[->, <<m1_color>><<sty_b1>>] (m1) edge node[above right, align=center, xshift=3pt] {\\textcolor{gray}{<<coef_b1>>}} (y);
+\\path[->, <<m2_color>><<sty_a2>>] (x) edge node[below left, align=center, xshift=-3pt] {\\textcolor{gray}{<<coef_a2>>}} (m2);
+\\path[->, <<m2_color>><<sty_b2>>] (m2) edge node[below right, align=center, xshift=3pt] {\\textcolor{gray}{<<coef_b2>>}} (y);",
                                     .open = "<<", .close = ">>"
     )
   } else {
     path_labels <- glue::glue_data(data,
-"\\path[->, <<m1_color>>] (x) edge (m1);
-\\path[->, <<m1_color>>] (m1) edge (y);
-\\path[->, <<m2_color>>] (x) edge (m2);
-\\path[->, <<m2_color>>] (m2) edge (y);",
+"\\path[->, <<m1_color>><<sty_a1>>] (x) edge (m1);
+\\path[->, <<m1_color>><<sty_b1>>] (m1) edge (y);
+\\path[->, <<m2_color>><<sty_a2>>] (x) edge (m2);
+\\path[->, <<m2_color>><<sty_b2>>] (m2) edge (y);",
                                     .open = "<<", .close = ">>"
     )
   }
 
   data$path_labels <- path_labels
+  data$legend_block <- if (legend) {
+"% Legend
+\\node[align=left, anchor=west] at (0, -8) {
+  \\scriptsize $^{*}p < 0.05$; $^{**}p < 0.01$; $^{***}p < 0.001$
+};"
+  } else ""
 
   # Main diagram with curved ACME arrows (like single mediator version)
   glue::glue_data(data,
@@ -403,17 +492,14 @@ sem_dual_med_diagram_tikz <- function(data,
 % Direct paths through mediators (thin, de-emphasized)
 <<path_labels>>
 % Curved ACME arrows (like single mediator diagrams) - wider curves to clear mediators
-\\draw[->, <<m1_color>>, thick] (x.north east) to[out=35, in=145, looseness=0.5]
+\\draw[->, <<m1_color>><<acme_thick>><<sty_i1>>] (x.north east) to[out=35, in=145, looseness=0.5]
   node[midway, above, align=center, yshift=2pt] {ACME$_1$: <<coef_ind_m1>>} (y.north west);
-\\draw[->, <<m2_color>>, thick] (x.south east) to[out=-35, in=-145, looseness=0.5]
+\\draw[->, <<m2_color>><<acme_thick>><<sty_i2>>] (x.south east) to[out=-35, in=-145, looseness=0.5]
   node[midway, below, align=center, yshift=-2pt] {ACME$_2$: <<coef_ind_m2>>} (y.south west);
 % Direct effect X -> Y (ADE)
-\\path[->] (x) edge node[above, align=center, yshift=1pt] {ADE: <<coef_c>>} (y);
-\\path[->] (x) edge node[below, align=center, yshift=-5pt] {Total: <<coef_total>>} (y);
-% Legend
-\\node[align=left, anchor=west] at (0, -8) {
-  \\scriptsize $^{*}p < 0.05$; $^{**}p < 0.01$; $^{***}p < 0.001$
-};
+\\path[->, <<sty_c_lead>>] (x) edge node[above, align=center, yshift=1pt] {ADE: <<coef_c>>} (y);
+\\path[->, <<sty_tot_lead>>] (x) edge node[below, align=center, yshift=-5pt] {Total: <<coef_total>>} (y);
+<<legend_block>>
 % Label
 \\node at (-2, 7) {\\scriptsize <<diag_label>>};
 \\end{tikzpicture}",

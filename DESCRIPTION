@@ -1,7 +1,7 @@
 Package: mediatr
 Type: Package
 Title: Publication-Ready Mediation Analysis Diagrams
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: person("Omar", "Wasow", email = "owasow@gmail.com",
                   role = c("aut", "cre"))
 Description: Create publication-ready mediation analysis diagrams and tables
