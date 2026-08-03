@@ -93,3 +93,35 @@ compile_png(sem_dual_med_diagram_tikz(dual_dat, show_paths = TRUE),
 compile_png(sem_dual_med_diagram_tikz(dual_dat, show_paths = TRUE,
                                       bw = TRUE, weight_by = "coefficient"),
             "README-dual-weighted-bw")
+
+## --- Serial mediation: simulated X -> M1 -> M2 -> Y chain --------------
+
+set.seed(2026)
+ser <- data.frame(x = rbinom(n, 1, 0.5))
+ser$m1 <- 0.50 * ser$x + rnorm(n)
+ser$m2 <- 0.40 * ser$m1 + 0.15 * ser$x + rnorm(n)
+ser$y  <- 0.30 * ser$m1 + 0.35 * ser$m2 - 0.15 * ser$x + rnorm(n)
+
+# := labels are sem_serial_med_data_prep_df()'s defaults (ind_serial,
+# ind_teach, ind_enrb; remappable via path_labels=).
+serial_spec <- '
+    m1 ~ a1*x
+    m2 ~ a2*m1 + d1*x
+    y  ~ b1*m1 + b2*m2 + c*x
+
+    ind_serial := a1 * a2 * b2
+    ind_teach  := a1 * b1
+    ind_enrb   := d1 * b2
+    total_indirect := ind_serial + ind_teach + ind_enrb
+    total := c + total_indirect
+'
+fit_ser <- sem(serial_spec, data = ser, se = "bootstrap", bootstrap = 500)
+
+serial_dat <- sem_serial_med_data_prep_df(
+  fit_ser,
+  lab_x  = "Treatment",
+  lab_y  = "Outcome",
+  lab_m1 = "Mediator 1",
+  lab_m2 = "Mediator 2"
+)
+compile_png(sem_serial_med_diagram_tikz(serial_dat), "README-serial")

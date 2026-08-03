@@ -206,6 +206,10 @@ tikz_code <- sem_serial_med_diagram_tikz(diagram_data)
 cat(tikz_code)
 ```
 
+<p align="center">
+  <img src="man/figures/README-serial.png" width="70%" alt="Serial mediation diagram: treatment to outcome through mediator 1 then mediator 2, with the serial link between mediators and the decomposed indirect effects listed below the diagram">
+</p>
+
 ## LaTeX Requirements
 
 Add to your preamble:
